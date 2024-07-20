@@ -14,5 +14,8 @@ Right click Setup.ps1, click Run with Powershell
 Follow the Prompts
 
 
-Setting it up to run on startup, just run StartupManager.ps1 and choose the prompt option to add to startup
+Setting it up to run on startup, just run StartupManager.ps1 and choose the prompt option to add to the startup folder
 
+### Notes
+This was my first time doing anything with PowerShell, hopefully it's good
+Feel free to open an issue even for something as simple as you think a certain part could be more efficient or look cleaner if done a different way
