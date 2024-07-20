@@ -14,7 +14,5 @@ Right click Setup.ps1, click Run with Powershell
 Follow the Prompts
 
 
-Setting it up to run on startup
-Right click Updater.ps1, click create shortcut
-Right click the shortcut, click properties
+Setting it up to run on startup, just run StartupManager.ps1 and choose the prompt option to add to startup
 
