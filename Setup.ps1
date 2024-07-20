@@ -1,4 +1,4 @@
-'https://github.link.here.ill.make.one.later'
+'https://github.com/Correlander/BetterDiscordAutoInstaller'
 'BetterDiscord-AutoInstaller v1.0'
 
 [bool]$VALID_INSTALL_PATH = $false
