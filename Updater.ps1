@@ -140,8 +140,8 @@ while ($true)
 if ($LAST_INSTALLED_VERSION -eq $LATEST_INSTALLED_VERSION)
 {
     "Last installed version matches the latest version. Starting Discord then exiting updater." | Add-Content 'latest.log'
-    #StartDiscord
-    #Exit
+    StartDiscord
+    Exit
 }
 
 # If script reaches this point, need to install a BD update.
@@ -187,5 +187,3 @@ $BRANCH,$PARENT_PATH,$LATEST_INSTALLED_VERSION | Out-File -FilePath 'settings.tx
 StartDiscord
 "Installation complete! Exiting." | Add-Content 'latest.log' # Finish log
 Exit
-
-# ONCE THIS IS WORKING UNCOMMENT THE STUFF IN VERSION COMPARISON THAT EXITS
