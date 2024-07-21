@@ -9,12 +9,21 @@ Either run it as admin and set it for your entire system with Set-ExecutionPolic
 Or set it just for you, as a user with Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
 
 
-Clone repo to wherever you want to store it
+If you have git, just clone the repo
+If you don't have git, here you go
+1- `Open PowerShell`
+2- `cd {path\you\want\the\files}` Don't include the {}
+3- `Invoke-WebRequest 'https://github.com/Correlander/BetterDiscordAutoInstaller/archive/refs/heads/main.zip' -OutFile .\BDAT.zip`
+4 - `Expand-Archive .\BDAT.zip .\`
+5 - `Rename-Item .\BetterDiscordAutoInstaller-main .\BetterDiscordAutoInstaller`
+6 - `Remove-Item .\BDAT.zip`
+You should now have all the files needed
+
+Next:
 Right click Setup.ps1, click Run with Powershell
 Follow the Prompts
-
-
-Setting it up to run on startup, just run StartupManager.ps1 and choose the prompt option to add to the startup folder
+Next:
+If you want it to run on startup, just run StartupManager.ps1 in PowerShell and choose the prompt option to add to the startup folder
 
 ### Notes
 This was my first time doing anything with PowerShell, hopefully it's good
