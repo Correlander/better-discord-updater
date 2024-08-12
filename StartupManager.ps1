@@ -2,7 +2,7 @@ Write-Host 'This script is to manage the running of Update.ps1 on startup of you
 [bool]$CHOOSING = $true
 [string]$SHORTCUT_PATH = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\BDUpdater.lnk"
 [string]$TARGET_PATH = "powershell.exe"
-[string]$ARGUMENTS = "-ExecutionPolicy Bypass -File $PSScriptRoot\Updater.ps1"
+[string]$ARGUMENTS = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File $PSScriptRoot\Updater.ps1"
 [string]$WORKING_DIRECTORY = $PSScriptRoot
 
 while ($CHOOSING)
