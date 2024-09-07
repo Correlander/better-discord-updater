@@ -152,9 +152,9 @@ function Settings-Manager {
                 [bool]$validBranch = $false
 
                 # Check if the settings file exists
-                if (Test-Path -Path ".\settings.txt") {
+                if (Test-Path -Path "$env:LOCALAPPDATA\BetterDiscordUpdater\settings.txt") {
                     
-                    [array]$settings = Get-Content 'settings.txt'
+                    [array]$settings = Get-Content "$env:LOCALAPPDATA\BetterDiscordUpdater\settings.txt"
                     $branch = $settings[0]
                     $parentPath = $settings[1]
 
