@@ -1,8 +1,11 @@
 # Fluff
-Write-Host "BetterDiscord Updater Setup Script v1.3"
+Write-Host "BetterDiscord Updater Setup Script v1.4"
 Write-Host "Copyright (c) 2024 Correlander - MIT License"
 Write-Host "https://github.com/Correlander/better-discord-updater"
 Write-Host "`n"
+
+# Variables
+[String]$directoryPath = "$env:LOCALAPPDATA\BetterDiscordUpdater"
 
 # Function for prompts to handle startup. Add or remove Updater.ps1 to startup.
 function Startup-Manager {
@@ -28,7 +31,7 @@ function Startup-Manager {
             '0' {
                 # Create the shortcut and save it in the startup folder
                 [String]$targetPath = "powershell.exe"
-                [String]$arguments = "-NoProfile -WindowStyle Minimized -ExecutionPolicy Bypass -File $env:LOCALAPPDATA\BetterDiscordUpdater\Updater.ps1"
+                [String]$arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File $script:directoryPath\Updater.ps1"
 
                 $shell = New-Object -ComObject WScript.Shell
                 $shortcut = $shell.CreateShortcut($shortcutPath)
@@ -36,6 +39,8 @@ function Startup-Manager {
                 $shortcut.TargetPath = $targetPath
                 $shortcut.Arguments = $arguments
                 $shortcut.Description = 'Shortcut that adds the updater script for better discord to windows startup.'
+                $shortcut.WorkingDirectory = $script:directoryPath
+                $shortcut.WindowStyle = 7
 
                 $shortcut.Save()
 
@@ -125,8 +130,8 @@ function Setup-Settings {
     }
 
     # Now that we have both valid values, save them to file
-    $branch,$parentPath,'' | Out-File -FilePath "$env:LOCALAPPDATA\BetterDiscordUpdater\settings.txt"
-    Write-Host "Entered settings have been saved to file.`n`n" -ForegroundColor Green -BackgroundColor Black
+    $branch,$parentPath,'' | Out-File -FilePath "$script:directoryPath\settings.txt"
+    Write-Host "Entered settings have been saved to file." -ForegroundColor Green -BackgroundColor Black
 }
 
 # Function for prompts to handle settings. Check if they are valid still, and/or go through setup again.
@@ -152,12 +157,12 @@ function Settings-Manager {
                 [bool]$validBranch = $false
 
                 # Check if the settings file exists
-                if (Test-Path -Path "$env:LOCALAPPDATA\BetterDiscordUpdater\settings.txt") {
+                if (Test-Path -Path "$script:directoryPath\settings.txt") {
                     
-                    [array]$settings = Get-Content "$env:LOCALAPPDATA\BetterDiscordUpdater\settings.txt"
+                    [array]$settings = Get-Content "$script:directoryPath\settings.txt"
                     $branch = $settings[0]
                     $parentPath = $settings[1]
-
+                    
                     # Check if Branch is valid
                     if (($branch -eq 'Discord') -or ($branch -eq 'DiscordPTB') -or ($branch -eq 'DiscordCanary')) {
                         $validBranch = $true
@@ -198,17 +203,16 @@ function Settings-Manager {
 function Run-Installer {
     
     # Define the directory and file paths
-    [String]$directoryPath = "$env:LOCALAPPDATA\BetterDiscordUpdater"
     [String]$fileName = "Updater.ps1"
-    [String]$updaterFilePath = Join-Path -Path $directoryPath -ChildPath "Updater.ps1"
-    [String]$licenseFilePath = Join-Path -Path $directoryPath -ChildPath "LICENSE.txt"
+    [String]$updaterFilePath = Join-Path -Path $script:directoryPath -ChildPath "Updater.ps1"
+    [String]$licenseFilePath = Join-Path -Path $script:directoryPath -ChildPath "LICENSE.txt"
     [String]$updaterFileUrl = 'https://raw.githubusercontent.com/Correlander/better-discord-updater/main/Updater.ps1'
     [String]$licenseFileUrl = 'https://raw.githubusercontent.com/Correlander/better-discord-updater/main/LICENSE'
 
     # Check if directory is setup for the script/license
-    if (-not (Test-Path -Path $directoryPath)) {
+    if (-not (Test-Path -Path $script:directoryPath)) {
         # If not, create it -- and any non-existing parent dirs
-        New-Item -Path $directoryPath -ItemType Directory -ErrorAction SilentlyContinue
+        New-Item -Path $script:directoryPath -ItemType Directory -ErrorAction SilentlyContinue
     }
 
     # Install Updater.ps1 and LICENSE.txt
