@@ -208,7 +208,7 @@ while ($true) {
     Write-Host "[3] Exit."
 
     # Get user's input
-    $input = Read-Host -Prompt
+    $input = Read-Host -Prompt "Type a number and press Enter"
 
     # Switch statement based on that input
     switch ($input) {
