@@ -1,5 +1,5 @@
 # Fluff
-Write-Host "BetterDiscord Updater Setup Script v1.2"
+Write-Host "BetterDiscord Updater Setup Script v1.3"
 Write-Host "Copyright (c) 2024 Correlander - MIT License"
 Write-Host "https://github.com/Correlander/better-discord-updater"
 Write-Host "`n"
