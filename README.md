@@ -1,30 +1,15 @@
 # BetterDiscordAutoInstaller
-Powershell scripts that will update your better discord automatically if added to startup
-Only intended for Windows, there is already a Linux version out there (I believe). You can try running it on Linux, if you wish.
+Powershell scripts that will update your better discord for you just by running. Said script can be added to windows startup for full automation.
+Made for Windows, there is already a Linux version out there. You can try running this on Linux if you wish. I doubt it would work.
 
 # Installation
-Firstly make sure your execution policy is set to unrestricted
-Check with Get-ExecutionPolicy
-Either run it as admin and set it for your entire system with Set-ExecutionPolicy -ExecutionPolicy Unrestricted
-Or set it just for you, as a user with Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
-
-
-If you have git, just clone the repo  
-If you don't have git, here you go  
-1- `Open PowerShell`  
-2- `cd "path\you\want\the\files"`  
-3- `Invoke-WebRequest 'https://github.com/Correlander/BetterDiscordAutoInstaller/archive/refs/heads/main.zip' -OutFile .\BDAT.zip`  
-4 - `Expand-Archive .\BDAT.zip .\`  
-5 - `Rename-Item .\BetterDiscordAutoInstaller-main .\BetterDiscordAutoInstaller`  
-6 - `Remove-Item .\BDAT.zip`  
-You should now have all the files needed  
-
-Next:  
-Right click Setup.ps1, click Run with Powershell  
-Follow the Prompts  
-Next:  
-If you want it to run on startup, just run StartupManager.ps1 in PowerShell and choose the prompt option to add to the startup folder  
-
+Firstly make sure your execution policy is set to unrestricted  
+Check with `Get-ExecutionPolicy`  
+Either run it as admin and set it for your entire system with `Set-ExecutionPolicy -ExecutionPolicy Unrestricted`  
+Or set it just for you, as a user with `Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser`  
+  
+1 - `Open Powershell`  
+2- paste and run the following `iwr -useb https://raw.githubusercontent.com/Correlander/better-discord-updater/main/Setup.ps1 | iex`  
+  
 ### Notes  
-This was my first time doing anything with PowerShell, hopefully it's good  
-Feel free to open an issue even for something as simple as you think a certain part could be more efficient or look cleaner if done a different way  
+Feel free to open an issue even for something as simple as you think a certain part could be more efficient or look cleaner if done a different way.
