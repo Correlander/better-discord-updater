@@ -12,8 +12,8 @@ function Startup-Manager {
 
     # Give prompts
     Write-Host "Enter a number to select one of the following options:" -ForegroundColor DarkMagenta -BackgroundColor Black
-    Write-Host "[0] Add BetterDiscord Updater to startup."
-    Write-Host "[1] Remove BetterDiscord Updater from startup."
+    Write-Host "[0] Add to startup."
+    Write-Host "[1] Remove from startup."
     Write-Host "[2] Back."
 
     [bool]$choosing = $true
@@ -234,7 +234,6 @@ while ($true) {
     Write-Host "[3] Exit."
 
     [bool]$choosing = $true
-
     while ($choosing) {
 
         # Get user's input
@@ -257,6 +256,7 @@ while ($true) {
                 $choosing = $false
             }
             '3' {
+                Write-Host 'Exiting. Goodbye...' -ForegroundColor Yellow -BackgroundColor Black
                 Exit
             }
             default {
