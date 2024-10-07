@@ -10,11 +10,14 @@ Check with `Get-ExecutionPolicy`
 Either run it as admin and set it for your entire system with `Set-ExecutionPolicy -ExecutionPolicy Unrestricted`  
 Or set it just for you, as a user with `Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser`  
 
-Now that your execution policy is set, you should be good to actually install it. Literally just run the following command and follow the prompts. If you haven't installed BetterDiscord yet at least once, please do that first. This is only an updater! Not an installer.  
+Now that your execution policy is set, you should be good to actually run the script setup. Literally just run the following command and follow the prompts. If you haven't installed BetterDiscord yet at least once, please do that first. This is only an updater! Not an installer.  
 If it bugs out please open an issue, but as far as I know, it should work fine.  
 ```
 iwr -useb https://raw.githubusercontent.com/Correlander/better-discord-updater/main/Setup.ps1 | iex
 ```  
   
 ### Notes  
-Feel free to open an issue even for something as simple as you think a certain part could be more efficient or look cleaner if done a different way. I love making things perfect.
+Feel free to open an issue even for something as simple as you think a certain part could be more efficient or look cleaner if done a different way. I love making things perfect.  
+  
+If you installed Discord from the Microsoft/Windows store, I'd love to know if the updater still works for you.  
+I'd also love to know if the setup can find the correct files in the default location, or if they install to a different spot when installed via Microsoft/Windows Store.  
