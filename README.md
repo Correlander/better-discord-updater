@@ -16,7 +16,7 @@ If it bugs out please open an issue, but as far as I know, it should work fine.
 iwr -useb https://raw.githubusercontent.com/Correlander/better-discord-updater/main/Setup.ps1 | iex
 ```  
   
-### Notes  
+### Notes
 Feel free to open an issue even for something as simple as you think a certain part could be more efficient or look cleaner if done a different way. I love making things perfect.  
   
 If you installed Discord from the Microsoft/Windows store, I'd love to know if the updater still works for you.  
