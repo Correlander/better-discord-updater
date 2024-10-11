@@ -1,4 +1,4 @@
-# BetterDiscordAutoInstaller
+# Better Discord Automatic Updater
 Powershell scripts that will update your better discord for you just by running. Said script can be added to windows startup for full automation.
 Made for Windows, there is already a Linux version out there. You can try running this on Linux if you wish. I doubt it would work.
 
