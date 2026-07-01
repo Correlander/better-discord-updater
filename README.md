@@ -5,7 +5,7 @@ Made for Windows, there is already a Linux version out there. You can try runnin
 # Installation
 _All commands I list are meant to be done in powershell_  
   
-Firstly make sure your execution policy is set to unrestricted  
+Firstly make sure your execution policy is set to unrestricted. (Please be warned, this (while a low risk) would allow any malicious powershell scripts you download in the future to easily run. If you don't understand the implications of running this command, please don't install this. I would create a signature for it if I had the time.)
 Check with `Get-ExecutionPolicy`  
 Either run it as admin and set it for your entire system with `Set-ExecutionPolicy -ExecutionPolicy Unrestricted`  
 Or set it just for you, as a user with `Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser`  
