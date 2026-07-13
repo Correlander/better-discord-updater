@@ -1,23 +1,19 @@
 # Better Discord Automatic Updater
-Powershell scripts that will update your better discord for you just by running. Said script can be added to windows startup for full automation.
-Made for Windows, there is already a Linux version out there. You can try running this on Linux if you wish. I doubt it would work.
+A Powershell script which will update your better discord for you just by running. Said script can be added to windows startup for full automation, all easily setup from the installation script paired with it.
+Made for Windows, there is already a Linux version out there.  
+_There are several other things like this out there for Windows already, but all required third party setup of another language, so I made this project. It only depends on tools all modern Windows environments start with, and has a simplistic setup._  
 
 # Installation
-_All commands I list are meant to be done in powershell_  
-  
-Firstly make sure your execution policy is set to unrestricted. (Please be warned, this (while a low risk) would allow any malicious powershell scripts you download in the future to easily run. If you don't understand the implications of running this command, please don't install this. I would create a signature for it if I had the time.)
-Check with `Get-ExecutionPolicy`  
-Either run it as admin and set it for your entire system with `Set-ExecutionPolicy -ExecutionPolicy Unrestricted`  
-Or set it just for you, as a user with `Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser`  
+The command will use the bypass flag to bypass your execution policy, as I'm obviously not going to pay $100+ yearly for a certificate key for such a small project. The code is of course not malicious but I encourage you to read the code if you don't trust it. The bypass flag is essentially saying you understand the script you're running and trust it, and don't need it to be certified by an external source.  
+Do note, if you're on a Company machine, it's highly unlikely you will be able to run this. Your Domain Admin would likely strictly enforce execution policies using a Group Policy. However, I'm not sure what soul would be installing a script like this on their work computer, certainly none I know.  
 
-Now that your execution policy is set, you should be good to actually run the script setup. Literally just run the following command and follow the prompts. If you haven't installed BetterDiscord yet at least once, please do that first. This is only an updater! Not an installer.  
-If it bugs out please open an issue, but as far as I know, it should work fine.  
+With that information out of the way, the installation is rather simple. Run the following command inside your Windows command prompt (if you don't know how to access this, press your Windows key, then type "cmd", then press enter). After running the command, you just need to follow the prompts, everything should be straight-forward and explain itself.  
+If you haven't installed BetterDiscord at least once, please do that first. This is only an updater for an existing instance of it! It will not create the files required if they don't exist already, it only patches the ones that are there already.  
 ```
-iwr -useb https://raw.githubusercontent.com/Correlander/better-discord-updater/main/Setup.ps1 | iex
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/Correlander/better-discord-updater/main/Setup.ps1 | iex"
 ```  
-  
+
 ### Notes
-Feel free to open an issue even for something as simple as you think a certain part could be more efficient or look cleaner if done a different way. I love making things perfect.  
+Feel free to open an issue even for something as simple as you think a certain part could be more efficient or look cleaner if done a different way. I love making things perfect. Also of course if any prompts or pieces of the setup script aren't clear, again feel free to leave an issue.  
   
-If you installed Discord from the Microsoft/Windows store, I'd love to know if the updater still works for you.  
-I'd also love to know if the setup can find the correct files in the default location, or if they install to a different spot when installed via Microsoft/Windows Store.  
+_If you installed Discord from Microsoft Store, it's file location might be different. If it can't automatically find your installation, let me know, as I was unsure where it stores the installation when you download it from that source._
