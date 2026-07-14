@@ -9,7 +9,7 @@ Set-Location -Path $PSScriptRoot
 
 # Create new log
 'Updater.ps1 Running - BetterDiscord-AutoInstaller v1.0' | Out-File -FilePath 'latest.log'
-"https://github.link.here.i'll.make.one.later" | Add-Content 'latest.log'
+"https://github.com/Correlander/better-discord-updater" | Add-Content 'latest.log'
 
 # Make sure settings are valid before proceeding
 "Checking validity of 'settings.txt'." | Add-Content 'latest.log'
