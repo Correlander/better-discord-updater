@@ -25,36 +25,45 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
     if (-not (Test-Path -Path $script:directoryPath)) {# Check if directory for the updater exists
         
         try {# If not, create it -- and any non-existing parent dirs
-            Write-Host "Creating directory" -ForegroundColor Blue -BackgroundColor Black
+            Write-Host "Creating directory" -ForegroundColor Blue
             New-Item -Path $script:directoryPath -ItemType Directory -ErrorAction Stop | Out-Null
-            Write-Host "Succeeded" -ForegroundColor Blue -BackgroundColor Black
+            Write-Host "Succeeded" -ForegroundColor Blue
         }
         catch {
-            Write-Host "Error: Failed to create the directory [$script:directoryPath]" -ForegroundColor White -BackgroundColor DarkRed
-            Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red -BackgroundColor Black
+            Write-Host "Error: Failed to create the directory `"$script:directoryPath`" - Please copy this error and open an issue" -ForegroundColor White
+            Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "`nPress any key to continue..."
+            $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+            Exit
         }
     }
 
     try {# Install Updater.ps1
-        Write-Host "Installing Updater.ps1" -ForegroundColor Blue -BackgroundColor Black
-        Invoke-WebRequest -Uri -OutFile -ErrorAction Stop
+        Write-Host "Installing Updater.ps1" -ForegroundColor Blue
+        Invoke-WebRequest -Uri $updaterUrl -OutFile -ErrorAction Stop
         Set-ItemProperty -Path -Name IsReadOnly -Value $true -ErrorAction Stop
-        Write-Host "Succeeded" -ForegroundColor Blue -BackgroundColor Black
+        Write-Host "Succeeded" -ForegroundColor Blue
     }
     catch {
-        Write-Host "Error: Failed to create the file `"Updater.ps1`"" -ForegroundColor White -BackgroundColor DarkRed
-        Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red -BackgroundColor Black
+        Write-Host "Error: Failed to create the file `"Updater.ps1`" - Please copy this error and open an issue" -ForegroundColor White
+        Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "`nPress any key to continue..."
+        $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+        Exit
     }
 
     try {# Install LICENSE
-        Write-Host "Installing LICENSE" -ForegroundColor Blue -BackgroundColor Black
-        Invoke-WebRequest -Uri -OutFile -ErrorAction Stop
+        Write-Host "Installing LICENSE" -ForegroundColor Blue
+        Invoke-WebRequest -Uri $licenseUrl -OutFile -ErrorAction Stop
         Set-ItemProperty -Path -Name IsReadOnly -Value $true -ErrorAction Stop
-        Write-Host "Succeeded" -ForegroundColor Blue -BackgroundColor Black
+        Write-Host "Succeeded" -ForegroundColor Blue
     }
     catch {
-        Write-Host "Error: Failed to create the file `"LICENSE`"" -ForegroundColor White -BackgroundColor DarkRed
-        Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red -BackgroundColor Black
+        Write-Host "Error: Failed to create the file `"LICENSE`" - Please copy this error and open an issue" -ForegroundColor White
+        Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "`nPress any key to continue..."
+        $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+        Exit
     }
 
     if (-not (Test-Path -Path $script:configPath)) {# If no existing settings file
@@ -143,11 +152,13 @@ function Modify-Task {# Adds or removes tasks associated with this program withi
                 # Create the task
                 Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force -ErrorAction Stop | Out-Null
 
-                Write-Host "Scheduled Task created successfully!" -ForegroundColor Green -BackgroundColor Black
+                Write-Host "Scheduled Task created successfully!" -ForegroundColor Green
             }
             catch {# Used -ErrorAction Stop, so any error with registering the scheduled task will be considered termination worthy.
-                Write-Host "Error: Failed to add the task to Task Scheduler" -ForegroundColor White -BackgroundColor DarkRed
-                Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red -BackgroundColor Black
+                Write-Host "Error: Failed to add the task to Task Scheduler - Please copy this error and open an issue" -ForegroundColor White
+                Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
+                Write-Host "`nPress any key to continue..."
+                $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
             }
         }
         'remove' {# Remove the task associated with the provided branch, if it exists
@@ -155,18 +166,20 @@ function Modify-Task {# Adds or removes tasks associated with this program withi
             if ($existingTask) {
                 try {
                     Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction Stop
-                    Write-Host "Deleted task associated with Discord[$Branch]" -ForegroundColor Blue -BackgroundColor Black
+                    Write-Host "Deleted task associated with Discord[$Branch]" -ForegroundColor Blue
                 }
                 catch {
-                    Write-Host "Error: Failed to remove the task from Task Scheduler" -ForegroundColor White -BackgroundColor DarkRed
-                    Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red -BackgroundColor Black
+                    Write-Host "Error: Failed to remove the task from Task Scheduler - Please copy this error and open an issue" -ForegroundColor White
+                    Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
+                    Write-Host "`nPress any key to continue..."
+                    $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
                 }
             } else {
-                Write-Host "Warning: No background task found for [$Branch]" -ForegroundColor Yellow -BackgroundColor Black
+                Write-Host "Warning: No background task found for [$Branch]" -ForegroundColor Yellow
             }
         }
         default {
-            Write-Host "Error Details: Modify-Task was called with no `$Type flag." -ForegroundColor Red -BackgroundColor Black
+            Write-Host "Error: Modify-Task was called with no `$Type flag." -ForegroundColor Red
             Exit
         }
     }
@@ -181,7 +194,7 @@ function Full-Uninstall {# Fully uninstalls all files and tasks associated with 
     }
     # Wipe the parent directory that contains all related program files
     Remove-Item -Path $script:directoryPath -Recurse -Force
-    Write-Host "All tasks have been removed from the Windows Task Scheduler, and all files have been deleted..." -ForegroundColor Blue -BackgroundColor Black
+    Write-Host "All tasks have been removed from the Windows Task Scheduler, and all files have been deleted..." -ForegroundColor Blue
 }
 
 # ======================================================================= #
@@ -194,9 +207,9 @@ function Main-Menu {# UI logic regarding the main menu
     while ($true) {
 
         Clear-Host
-        Write-Host "========================================" -ForegroundColor Cyan -BackgroundColor Black
-        Write-Host "   BetterDiscord Updater - Setup v2.0   " -ForegroundColor Cyan -BackgroundColor Black
-        Write-Host "========================================`n" -ForegroundColor Cyan -BackgroundColor Black
+        Write-Host "========================================" -ForegroundColor Cyan
+        Write-Host "   BetterDiscord Updater - Setup v2.0   " -ForegroundColor Cyan
+        Write-Host "========================================`n" -ForegroundColor Cyan
 
         # Give prompts
         Write-Host "[1] Manage Background Updates"
@@ -205,7 +218,7 @@ function Main-Menu {# UI logic regarding the main menu
         Write-Host "[4] Exit"
 
         # Get user's input
-        $choice = Read-Host -Prompt "Type an option (1-4) and press enter | "
+        $choice = Read-Host -Prompt "Type an option (1-4) and press enter: "
 
         switch ($choice) {
             '1' {
@@ -222,7 +235,7 @@ function Main-Menu {# UI logic regarding the main menu
             }
             default {
                 Clear-Host
-                Write-Host "`nInvalid Selection. Please only enter a number between 1 and 4." -ForegroundColor Red -BackgroundColor Black
+                Write-Host "`nInvalid Selection. Please only enter a number between 1 and 4." -ForegroundColor Red
                 Start-Sleep -Seconds 3 # Pauses for 3 seconds so they can see their mistake in bright red before it refreshes and allows them to try again
             }
         }
@@ -234,10 +247,10 @@ function Tasks-Menu {# UI logic regarding the Background Updates sub-menu
     while ($true) {# Hold user in this sub-menu until the function returns
 
         Clear-Host
-        Write-Host "========================================" -ForegroundColor Cyan -BackgroundColor Black
-        Write-Host "       Manage Background Updates        " -ForegroundColor Cyan -BackgroundColor Black
-        Write-Host "========================================`n" -ForegroundColor Cyan -BackgroundColor Black
-        Write-Host "Choose a number to swap whether the branch is automatically updated on startup`n" -ForegroundColor Magenta -BackgroundColor Black
+        Write-Host "========================================" -ForegroundColor Cyan
+        Write-Host "       Manage Background Updates        " -ForegroundColor Cyan
+        Write-Host "========================================`n" -ForegroundColor Cyan
+        Write-Host "Choose a number to swap whether the branch is automatically updated on startup`n" -ForegroundColor Magenta
 
         # Populate dictionary with the statuses of all branches associated tasks
         [String[]]$branches = @('Stable', 'Canary', 'PTB')
@@ -259,7 +272,7 @@ function Tasks-Menu {# UI logic regarding the Background Updates sub-menu
         Write-Host "[4] Back" -ForegroundColor DarkGray
 
         # Get user's input
-        $choice = Read-Host -Prompt "Type an option (1-4) and press enter | "
+        $choice = Read-Host -Prompt "Type an option (1-4) and press enter: "
 
         # Map the choice to the branch
         $selectedBranch = $null 
@@ -270,7 +283,7 @@ function Tasks-Menu {# UI logic regarding the Background Updates sub-menu
             '4' { return }
             default {
                 Clear-Host
-                Write-Host "`nInvalid Selection. Please only enter a number between 1 and 4." -ForegroundColor Red -BackgroundColor Black
+                Write-Host "`nInvalid Selection. Please only enter a number between 1 and 4." -ForegroundColor Red
                 Start-Sleep -Seconds 3 # Pauses for 3 seconds so they can see their mistake in bright red before it refreshes and allows them to try again
             }
         }
@@ -347,10 +360,10 @@ function Settings-Menu {# UI logic regarding the settings sub-menu
     while ($true) {# Hold user in this sub-menu until the function returns
         
         Clear-Host
-        Write-Host "========================================" -ForegroundColor Cyan -BackgroundColor Black
-        Write-Host "            Settings Manager            " -ForegroundColor Cyan -BackgroundColor Black
-        Write-Host "========================================`n" -ForegroundColor Cyan -BackgroundColor Black
-        Write-Host "Select a branch to override its installation path.`n" -ForegroundColor Magenta -BackgroundColor Black
+        Write-Host "========================================" -ForegroundColor Cyan
+        Write-Host "            Settings Manager            " -ForegroundColor Cyan
+        Write-Host "========================================`n" -ForegroundColor Cyan
+        Write-Host "Select a branch to override its installation path.`n" -ForegroundColor Magenta
 
         # Read the current settings from the JSON file
         $config = Get-Content -Path $script:configPath | ConvertFrom-Json
@@ -367,7 +380,7 @@ function Settings-Menu {# UI logic regarding the settings sub-menu
         Write-Host "[4] Clear all custom paths" -ForegroundColor Yellow
         Write-Host "[5] Back" -ForegroundColor DarkGray
 
-        $choice = Read-Host -Prompt "`nType an option (1-5) and press enter | "
+        $choice = Read-Host -Prompt "`nType an option (1-5) and press enter: "
 
         $selectedBranch = $null
         switch ($choice) {
@@ -383,7 +396,7 @@ function Settings-Menu {# UI logic regarding the settings sub-menu
             '5' { return }
             default {
                 Clear-Host
-                Write-Host "`nInvalid Selection. Please only enter a number between 1 and 5." -ForegroundColor Red -BackgroundColor Black
+                Write-Host "`nInvalid Selection. Please only enter a number between 1 and 5." -ForegroundColor Red
                 Start-Sleep -Seconds 3
                 continue # Skips the rest of the loop
             }
@@ -403,9 +416,9 @@ function Full-Uninstall-Menu {# UI logic regarding the sub-menu for confirming a
     while ($true) {# Hold user in this sub-menu until the function returns
 
         Clear-Host
-        Write-Host "========================================" -ForegroundColor Cyan -BackgroundColor Black
-        Write-Host "             FULL UNINSTALL             " -ForegroundColor Cyan -BackgroundColor Black
-        Write-Host "========================================`n" -ForegroundColor Cyan -BackgroundColor Black
+        Write-Host "========================================" -ForegroundColor Cyan
+        Write-Host "             FULL UNINSTALL             " -ForegroundColor Cyan
+        Write-Host "========================================`n" -ForegroundColor Cyan
 
         Write-Host "Proceeding will fully delete all files and tasks associated with this updater.`n"
         
