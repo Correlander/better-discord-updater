@@ -218,7 +218,7 @@ function Main-Menu {# UI logic regarding the main menu
 
     # Let user read the outputs from those successful operations (unsuccessful ones would exit)
     Write-Host "`nBootstrapping complete, proceeding to menu..."
-    Start-Sleep -Seconds 4
+    Start-Sleep -Seconds 3
 
     while ($true) {
 
