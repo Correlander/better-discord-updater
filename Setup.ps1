@@ -294,7 +294,7 @@ function Tasks-Menu {# UI logic regarding the Background Updates sub-menu
         Write-Host "========================================" -ForegroundColor Cyan
         Write-Host "       Manage Background Updates        " -ForegroundColor Cyan
         Write-Host "========================================`n" -ForegroundColor Cyan
-        Write-Host "Choose a number to swap whether the branch is automatically updated on startup`n" -ForegroundColor Magenta
+        Write-Host "Choose a number to swap whether the branch is automatically updated on startup" -ForegroundColor Magenta
 
         # Populate dictionary with the statuses of all branches associated tasks
         [String[]]$branches = @('Stable', 'Canary', 'PTB')
