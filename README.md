@@ -1,8 +1,10 @@
 # Better Discord Automatic Updater
 A Powershell script that will automatically update Better Discord, so you don't need to run the installer manually every Sunday when Discord pushes their weekly update.  
-Installation of this updater script is extremely easy, as it is paired with a setup script that can be used for setting it up and/or changing settings later on (found below).
+I originally got the idea because it was extremely frustrating having my BetterDiscord install break every single week.  
+  
+Installation of this updater script is extremely easy, simply use the provided command to run the Setup CLI (found below).
 Made for Windows, there is already a Linux version out there.  
-
+  
 _There are several other things like this out there for Windows already, but all required third party setup of another language, so I made this project. It only depends on tools all modern Windows environments start with, and has a simplistic setup._  
 
 # Installation

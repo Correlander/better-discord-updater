@@ -99,12 +99,21 @@ function Find-Default-Path {# Attempts to find the default installation path for
     param (
         $Branch
     )
-    # incomplete, not used in logic yet anyways
+
+    $parentPath = "$env:LOCALAPPDATA\$Branch"
+    if (Test-Path -Path (Join-Path -Path $parentPath -ChildPath "Update.exe"))
+    {
+        Write-Host "Installation at Default path `"$parentPath`" automatically found." -ForegroundColor Green
+        return $true
+    } else {
+        Write-Host "Installation at Default path `"$parentPath`" not found." -ForegroundColor Yellow
+        return $false
+    }
 }
 
 function Modify-Task {# Adds or removes tasks associated with this program within the Windows Task Scheduler
     param(# Parameters
-        [String]$Type
+        [String]$Type,
         [String]$Branch
     )
 
@@ -113,6 +122,17 @@ function Modify-Task {# Adds or removes tasks associated with this program withi
 
     switch ($Type) {
         'add' {# Add a task to Windows Task Scheduler that will run the updater script upon user login for the specified Discord branch
+
+            # Before trying to create it, make sure we have a path to use
+            [String]$installDirectory
+            if (-not (Find-Default-Path)) {# If not installed at the default path
+                $installDirectory = Enter-Custom-Path -Branch $Branch -IsRequired# Ask the user for a custom path
+                if ($installDirectory -eq '') { # If we get a blank string back, user chose to Cancel
+                    Write-Host "`nAborting task creation" -ForegroundColor Yellow
+                    return
+                }
+            }
+
             try {
                 # Define task creation parameters
                 $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$script:directoryPath\Updater.ps1`" -Branch `"$Branch`""
@@ -276,12 +296,50 @@ function Tasks-Menu {# UI logic regarding the Background Updates sub-menu
 
 function Enter-Custom-Path {# UI logic regarding entering a custom file path, returns the path user entered
     [OutputType([String])]
+    param (
+        [String]$Branch,
+        [switch]$IsRequired
+    )
 
-    $newPath = Read-Host -Prompt "Path | "
+    Write-Host "`nEnter the path to your custom installation for Discord[$Branch]" -ForegroundColor Cyan
+    Write-Host "`nMake sure it is the ABSOLUTE PATH for the folder containing `"Update.exe`"" -ForegroundColor Cyan
+    Write-Host "`n(In File Explorer, if you navigate into the folder, you can right click the address bar and click `"Copy address as text`")" -ForegroundColor DarkGray
 
-    $newPath = $newPath.Trim('"').Trim("'")
+    # Change last prompt based on whether this path is required, or if it's fine to be returned as Default
+    if ($IsRequired) {
+        Write-Host "(A valid path is required. Type 'cancel' to abort setup)`n" -ForegroundColor Yellow
+    } else {
+        Write-Host "(Leave blank and press Enter to revert to Default)`n" -ForegroundColor DarkGray
+    }
 
-    return $newPath
+    while ($true) {
+        
+        # Grab input
+        $newPath = Read-Host -Prompt "Path: "
+        # Trim the input of string signifiers, in case the user enters them thinking they are needed
+        $newPath = $newPath.Trim('"').Trim("'")
+
+        # Handle the cancel keyword
+        if (($IsRequired) -and ($newPath.ToLower() -eq 'cancel')) {
+            return "" # If task setup receives this, should cancel the setup
+        }
+
+        # Handle blank inputs
+        if ($newPath -eq "") {
+            if ($IsRequired) {
+                Write-Host "`nInvalid Path: A valid path is required. Type 'cancel' to abort, or enter a valid path" -ForegroundColor Yellow
+            } else {
+                return "" # Settings menu behavior, just returns "" and will set the entry to that, which is default value
+            }
+        }
+
+        # Validation Step, if neither special case met
+        if (Test-Path (Join-Path -Path $newPath -ChildPath "Update.exe")) {
+            return $newPath
+        } else {
+            Write-Host "`nInvalid Path: That directory does not exist. Please verify and try again." -ForegroundColor Yellow
+        }
+    }
 }
 
 function Settings-Menu {# UI logic regarding the settings sub-menu
@@ -331,11 +389,8 @@ function Settings-Menu {# UI logic regarding the settings sub-menu
             }
         }
 
-        # Work with the user to get custom path
-        Write-Host "`nEnter the custom folder path for Discord[$Branch]" -ForegroundColor Cyan
-        Write-Host "(Leave blank and press Enter to revert to Default)`n" -ForegroundColor DarkGray
-
-        $customPath = Enter-Custom-Path
+        # Get the path they want to set the selected branch to
+        $customPath = Enter-Custom-Path -Branch $selectedBranch
         Modify-Setting -Branch $selectedBranch -Path $customPath
         
         Write-Host "`nPress any key to continue..."
@@ -365,158 +420,3 @@ function Full-Uninstall-Menu {# UI logic regarding the sub-menu for confirming a
 
 # Begin UI logic by running the Main Menu
 Main-Menu
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Function to go through settings setup
-function Setup-Settings {
-    [string]$branch
-    [string]$installationsParentPath
-
-    [bool]$choosing = $true
-
-    # Give prompts
-    Write-Host "Enter a number to select one of the following Discord branches:" -ForegroundColor DarkMagenta -BackgroundColor Black
-    Write-Host "[0] Discord."
-    Write-Host "[1] DiscordPTB."
-    Write-Host "[2] DiscordCanary."
-
-    # Input loop
-    while ($choosing) {
-
-        # Get user's input
-        $input = Read-Host -Prompt "Type a number then press Enter"
-
-        switch ($input) {
-            '0' {
-                Write-Host "You've chosen Discord." -ForegroundColor Blue -BackgroundColor Black
-                $branch = 'Discord'
-                $choosing = $false
-            }
-            '1' {
-                Write-Host "You've chosen DiscordPTB." -ForegroundColor Blue -BackgroundColor Black
-                $branch = 'DiscordPTB'
-                $choosing = $false
-            }
-            '2' {
-                Write-Host "You've choice DiscordCanary." -ForegroundColor Blue -BackgroundColor Black
-                $branch = 'DiscordCanary'
-                $choosing = $false
-            }
-            default {
-                Write-Host "That is not a valid input... try again.`n`n" -ForegroundColor Red -BackgroundColor Black
-            }
-        }
-    }
-
-    $parentPath = "$env:LOCALAPPDATA\$branch"
-    if (Test-Path -Path "$parentPath\Update.exe")
-    {
-        Write-Host "Automatically found install path at `"$parentPath`"." -ForegroundColor Blue -BackgroundColor Black
-    }
-    else
-    {
-        while ($true)
-        {
-            $installationsParentPath = Read-Host -Prompt "Couldn't automatically find your Discord installation folder at `"$parentPath`".`nPlease type in the absolute path for the folder containing `"Update.exe`" (if you navigate to it, right click the address bar and click `"Copy address as text`").`n"
-            if (Test-Path -Path "$parentPath\Update.exe")
-            {
-                Write-Host "Successfully found your install folder at `"$installationsParentPath`". Thanks!" -ForegroundColor Blue -BackgroundColor Black
-                Break
-            }
-            else
-            {
-                Write-Host "The path you entered wasn't valid, please try again." -ForegroundColor Red -BackgroundColor Black
-            }
-        }
-    }
-
-    # Now that we have both valid values, save them to file
-    $branch,$parentPath,'' | Out-File -FilePath "$script:directoryPath\settings.txt"
-    Write-Host "Entered settings have been saved to file." -ForegroundColor Green -BackgroundColor Black
-}
-
-# Function for prompts to handle settings. Check if they are valid still, and/or go through setup again.
-function Settings-Manager {
-
-    # Give prompts
-    Write-Host "Enter a number to select one of the following options:" -ForegroundColor DarkMagenta -BackgroundColor Black
-    Write-Host "[0] Check if settings are valid."
-    Write-Host "[1] Go through settings setup again."
-    Write-Host "[2] Back."
-
-    [bool]$choosing = $true
-
-    # Input loop
-    while ($choosing) {
-        
-        # Get user's input
-        $input = Read-Host -Prompt "Type a number then press Enter"
-
-        switch ($input) {
-            '0' {
-                [bool]$validInstallPath = $false
-                [bool]$validBranch = $false
-
-                # Check if the settings file exists
-                if (Test-Path -Path "$script:directoryPath\settings.txt") {
-                    
-                    [array]$settings = Get-Content "$script:directoryPath\settings.txt"
-                    $branch = $settings[0]
-                    $parentPath = $settings[1]
-                    
-                    # Check if Branch is valid
-                    if (($branch -eq 'Discord') -or ($branch -eq 'DiscordPTB') -or ($branch -eq 'DiscordCanary')) {
-                        $validBranch = $true
-
-                        # Since branch was valid, check parent path
-                        if (Test-Path "$env:LOCALAPPDATA\$branch\Update.exe") {
-                            $validInstallPath = $true
-                        } else {
-                            Write-Host "Your branch setting is valid, but the install path doesn't appear to be valid. Please go through settings setup again." -ForegroundColor Red -BackgroundColor Black
-                        }
-                    } else {
-                        Write-Host "The branch setting is corrupted. Please go through settings setup again." -ForegroundColor Red -BackgroundColor Black
-                    }
-                } else {
-                    Write-Host "Your settings file doesn't seem to even exist... Please run install once if you haven't already. If you have, and your settings file has disappeared, please go through setup again." -ForegroundColor Red -BackgroundColor Black
-                }
-
-                # If settings are valid, let user know
-                if (($validBranch) -and ($validInstallPath)) {
-                    Write-Host "Your settings file is valid." -ForegroundColor Green -BackgroundColor Black
-                }
-            }
-            '1' {
-                Setup-Settings
-            }
-            '2' {
-                Write-Host "Going to main menu...`n`n" -ForegroundColor Blue -BackgroundColor Black
-                $choosing = $false
-            }
-            default {
-                Write-Host "That is not a valid input... try again." -ForegroundColor Red -BackgroundColor Black
-            }
-        }
-    }
-}
