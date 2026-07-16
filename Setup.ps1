@@ -121,13 +121,30 @@ function Find-Default-Path {# Attempts to find the default installation path for
         $Branch
     )
 
-    $parentPath = "$env:LOCALAPPDATA\$Branch"
-    if (Test-Path -Path (Join-Path -Path $parentPath -ChildPath "Update.exe"))
+    [String]$discordDirectory
+    switch ($Branch) {# Discord has nothing signifying a stable branch, but I need to identify the stable branch's difference in my code, hence the switch statement for an accurate directory name
+        'Stable' {
+            $discordDirectory = "Discord"
+        }
+        'Canary' {
+            $discordDirectory = "DiscordCanary"
+        }
+        'PTB' {
+            $directoryPath = "DiscordPTB"
+        }
+        default {
+            Write-Host "Error: Find-Default-Path was called with either an invalid or no `$Branch flag." -ForegroundColor Red
+            Exit
+        }
+    }
+
+    $discordPath = Join-Path -Path $env:LOCALAPPDATA -ChildPath $discordDirectory
+    if (Test-Path -Path (Join-Path -Path $discordPath -ChildPath "Update.exe"))
     {
-        Write-Host "Installation at Default path `"$parentPath`" automatically found." -ForegroundColor Green
+        Write-Host "Installation at Default path `"$discordPath`" automatically found." -ForegroundColor Green
         return $true
     } else {
-        Write-Host "Installation at Default path `"$parentPath`" not found." -ForegroundColor Yellow
+        Write-Host "Installation at Default path `"$discordPath`" not found." -ForegroundColor Yellow
         return $false
     }
 }
@@ -139,14 +156,25 @@ function Modify-Task {# Adds or removes tasks associated with this program withi
     )
 
     # Define variables
-    $taskName = "BetterDiscordUpdater$branch"
+    [String]$taskName = "BetterDiscordUpdater[$Branch]"
+
+    # Validate $Branch flag
+    switch ($Branch) {
+        'Stable' { continue }
+        'Canary' { continue }
+        'PTB' { continue }
+        default {
+            Write-Host "Error: Modify-Task was called with either an invalid or no `$Branch flag." -ForegroundColor Red
+            Exit
+        }
+    }
 
     switch ($Type) {
         'add' {# Add a task to Windows Task Scheduler that will run the updater script upon user login for the specified Discord branch
 
             # Before trying to create it, make sure we have a path to use
             [String]$installDirectory
-            if (-not (Find-Default-Path)) {# If not installed at the default path
+            if (-not (Find-Default-Path -Branch $Branch)) {# If not installed at the default path
                 $installDirectory = Enter-Custom-Path -Branch $Branch -IsRequired # Ask the user for a custom path
                 if ($installDirectory -eq '') { # If we get a blank string back, user chose to Cancel
                     Write-Host "`nAborting task creation" -ForegroundColor Yellow
@@ -190,8 +218,8 @@ function Modify-Task {# Adds or removes tasks associated with this program withi
                 Write-Host "Warning: No background task found for [$Branch]" -ForegroundColor Yellow
             }
         }
-        default {
-            Write-Host "Error: Modify-Task was called with no `$Type flag." -ForegroundColor Red
+        default {# If no proper type flag, will exit and call it out
+            Write-Host "Error: Modify-Task was called with either an invalid or no `$Type flag." -ForegroundColor Red
             Exit
         }
     }
@@ -273,7 +301,7 @@ function Tasks-Menu {# UI logic regarding the Background Updates sub-menu
         $statuses = @{} # I prefer variables more strictly typed
 
         foreach ($branch in $branches) {
-            $taskName = "BetterDiscordUpdater$branch"
+            $taskName = "BetterDiscordUpdater[$branch]"
             if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
                 $statuses[$branch] = '[INSTALLED]'
             } else {
