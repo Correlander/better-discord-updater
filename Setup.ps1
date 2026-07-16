@@ -30,7 +30,7 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
             Write-Host "Success" -ForegroundColor Green
         }
         catch {
-            Write-Host "Error: Failed to create the directory `"$script:directoryPath`" - Please copy this error and open an issue" -ForegroundColor White
+            Write-Host "Error: Failed to create the directory `"$script:directoryPath`" - Please copy this error and open an issue" -ForegroundColor Red
             Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
             Write-Host "`nPress any key to continue..."
             $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
@@ -45,7 +45,7 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
         Write-Host "Success" -ForegroundColor Green
     }
     catch {
-        Write-Host "Error: Failed to create the file `"Updater.ps1`" - Please copy this error and open an issue" -ForegroundColor White
+        Write-Host "Error: Failed to create the file `"Updater.ps1`" - Please copy this error and open an issue" -ForegroundColor Red
         Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
         Write-Host "`nPress any key to continue..."
         $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
@@ -59,7 +59,7 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
         Write-Host "Success" -ForegroundColor Green
     }
     catch {
-        Write-Host "Error: Failed to create the file `"LICENSE`" - Please copy this error and open an issue" -ForegroundColor White
+        Write-Host "Error: Failed to create the file `"LICENSE`" - Please copy this error and open an issue" -ForegroundColor Red
         Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
         Write-Host "`nPress any key to continue..."
         $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
@@ -155,7 +155,7 @@ function Modify-Task {# Adds or removes tasks associated with this program withi
                 Write-Host "Scheduled Task created successfully!" -ForegroundColor Green
             }
             catch {# Used -ErrorAction Stop, so any error with registering the scheduled task will be considered termination worthy.
-                Write-Host "Error: Failed to add the task to Task Scheduler - Please copy this error and open an issue" -ForegroundColor White
+                Write-Host "Error: Failed to add the task to Task Scheduler - Please copy this error and open an issue" -ForegroundColor Red
                 Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
                 Write-Host "`nPress any key to continue..."
                 $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
@@ -169,7 +169,7 @@ function Modify-Task {# Adds or removes tasks associated with this program withi
                     Write-Host "Deleted task associated with Discord[$Branch]" -ForegroundColor Blue
                 }
                 catch {
-                    Write-Host "Error: Failed to remove the task from Task Scheduler - Please copy this error and open an issue" -ForegroundColor White
+                    Write-Host "Error: Failed to remove the task from Task Scheduler - Please copy this error and open an issue" -ForegroundColor Red
                     Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
                     Write-Host "`nPress any key to continue..."
                     $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
