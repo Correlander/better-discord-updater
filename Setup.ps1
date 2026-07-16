@@ -204,6 +204,10 @@ function Main-Menu {# UI logic regarding the main menu
 
     Script-Bootstrapping # Install core files
 
+    # Let user read the outputs from those successful operations (unsuccessful ones would exit)
+    Write-Host "`nBootstrapping complete, proceeding to menu..."
+    Start-Sleep -Seconds 2
+
     while ($true) {
 
         Clear-Host
@@ -218,7 +222,7 @@ function Main-Menu {# UI logic regarding the main menu
         Write-Host "[4] Exit"
 
         # Get user's input
-        $choice = Read-Host -Prompt "Type an option (1-4) and press enter: "
+        $choice = Read-Host -Prompt "Type an option (1-4) and press enter"
 
         switch ($choice) {
             '1' {
@@ -272,7 +276,7 @@ function Tasks-Menu {# UI logic regarding the Background Updates sub-menu
         Write-Host "[4] Back" -ForegroundColor DarkGray
 
         # Get user's input
-        $choice = Read-Host -Prompt "Type an option (1-4) and press enter: "
+        $choice = Read-Host -Prompt "Type an option (1-4) and press enter"
 
         # Map the choice to the branch
         $selectedBranch = $null 
@@ -380,7 +384,7 @@ function Settings-Menu {# UI logic regarding the settings sub-menu
         Write-Host "[4] Clear all custom paths" -ForegroundColor Yellow
         Write-Host "[5] Back" -ForegroundColor DarkGray
 
-        $choice = Read-Host -Prompt "`nType an option (1-5) and press enter: "
+        $choice = Read-Host -Prompt "`nType an option (1-5) and press enter"
 
         $selectedBranch = $null
         switch ($choice) {
