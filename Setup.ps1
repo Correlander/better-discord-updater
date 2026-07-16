@@ -445,7 +445,6 @@ function Full-Uninstall-Menu {# UI logic regarding the sub-menu for confirming a
         if ($choice -eq 'DELETE') {
             Full-Uninstall
             Write-Host "Uninstallation complete. Exiting..." -ForegroundColor Green
-            Start-Sleep -Seconds 3
             Exit
         } else {
             return
