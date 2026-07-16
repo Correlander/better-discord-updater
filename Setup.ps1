@@ -25,9 +25,9 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
     if (-not (Test-Path -Path $script:directoryPath)) {# Check if directory for the updater exists
         
         try {# If not, create it -- and any non-existing parent dirs
-            Write-Host "Creating directory" -ForegroundColor Blue
+            Write-Host "`nCreating directory" -ForegroundColor Blue
             New-Item -Path $script:directoryPath -ItemType Directory -ErrorAction Stop | Out-Null
-            Write-Host "Succeeded" -ForegroundColor Blue
+            Write-Host "Success" -ForegroundColor Green
         }
         catch {
             Write-Host "Error: Failed to create the directory `"$script:directoryPath`" - Please copy this error and open an issue" -ForegroundColor White
@@ -39,10 +39,10 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
     }
 
     try {# Install Updater.ps1
-        Write-Host "Installing Updater.ps1" -ForegroundColor Blue
+        Write-Host "`nInstalling Updater.ps1" -ForegroundColor Blue
         Invoke-WebRequest -Uri $updaterUrl -OutFile $updaterPath -ErrorAction Stop
         Set-ItemProperty -Path $updaterPath -Name IsReadOnly -Value $true -ErrorAction Stop
-        Write-Host "Succeeded" -ForegroundColor Blue
+        Write-Host "Success" -ForegroundColor Green
     }
     catch {
         Write-Host "Error: Failed to create the file `"Updater.ps1`" - Please copy this error and open an issue" -ForegroundColor White
@@ -53,10 +53,10 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
     }
 
     try {# Install LICENSE
-        Write-Host "Installing LICENSE" -ForegroundColor Blue
+        Write-Host "`nInstalling LICENSE" -ForegroundColor Blue
         Invoke-WebRequest -Uri $licenseUrl -OutFile $licensePath -ErrorAction Stop
         Set-ItemProperty -Path $licensePath -Name IsReadOnly -Value $true -ErrorAction Stop
-        Write-Host "Succeeded" -ForegroundColor Blue
+        Write-Host "Success" -ForegroundColor Green
     }
     catch {
         Write-Host "Error: Failed to create the file `"LICENSE`" - Please copy this error and open an issue" -ForegroundColor White
@@ -206,7 +206,7 @@ function Main-Menu {# UI logic regarding the main menu
 
     # Let user read the outputs from those successful operations (unsuccessful ones would exit)
     Write-Host "`nBootstrapping complete, proceeding to menu..."
-    Start-Sleep -Seconds 2
+    Start-Sleep -Seconds 4
 
     while ($true) {
 
