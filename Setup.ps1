@@ -23,7 +23,7 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
     [String]$licenseUrl = 'https://raw.githubusercontent.com/Correlander/better-discord-updater/main/LICENSE'
 
     if (-not (Test-Path -Path $script:directoryPath)) {# Check if directory for the updater exists
-        
+
         try {# If not, create it -- and any non-existing parent dirs
             Write-Host "`nCreating directory" -ForegroundColor Blue
             New-Item -Path $script:directoryPath -ItemType Directory -ErrorAction Stop | Out-Null
@@ -39,6 +39,12 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
     }
 
     try {# Install Updater.ps1
+
+        # If it already exists, remove read only flag so we can overwrite
+        if (Test-Path -Path $updaterPath) {
+            Set-ItemProperty -Path $updaterPath -Name IsReadOnly -Value $false -ErrorAction Stop
+        }
+
         Write-Host "`nInstalling Updater.ps1" -ForegroundColor Blue
         Invoke-WebRequest -Uri $updaterUrl -OutFile $updaterPath -ErrorAction Stop
         Set-ItemProperty -Path $updaterPath -Name IsReadOnly -Value $true -ErrorAction Stop
@@ -53,6 +59,12 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
     }
 
     try {# Install LICENSE
+
+        # If it already exists, remove read only flag so we can overwrite
+        if (Test-Path -Path $licensePath) {
+            Set-ItemProperty -Path $licensePath -Name IsReadOnly -Value $false -ErrorAction Stop
+        }
+
         Write-Host "`nInstalling LICENSE" -ForegroundColor Blue
         Invoke-WebRequest -Uri $licenseUrl -OutFile $licensePath -ErrorAction Stop
         Set-ItemProperty -Path $licensePath -Name IsReadOnly -Value $true -ErrorAction Stop
