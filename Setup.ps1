@@ -40,7 +40,7 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
 
     try {# Install Updater.ps1
         Write-Host "Installing Updater.ps1" -ForegroundColor Blue
-        Invoke-WebRequest -Uri $updaterUrl -OutFile -ErrorAction Stop
+        Invoke-WebRequest -Uri $updaterUrl -OutFile $updaterPath -ErrorAction Stop
         Set-ItemProperty -Path -Name IsReadOnly -Value $true -ErrorAction Stop
         Write-Host "Succeeded" -ForegroundColor Blue
     }
@@ -54,7 +54,7 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
 
     try {# Install LICENSE
         Write-Host "Installing LICENSE" -ForegroundColor Blue
-        Invoke-WebRequest -Uri $licenseUrl -OutFile -ErrorAction Stop
+        Invoke-WebRequest -Uri $licenseUrl -OutFile $licensePath -ErrorAction Stop
         Set-ItemProperty -Path -Name IsReadOnly -Value $true -ErrorAction Stop
         Write-Host "Succeeded" -ForegroundColor Blue
     }
