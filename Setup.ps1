@@ -37,23 +37,23 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
 
     try {# Install Updater.ps1
         Write-Host "Installing Updater.ps1" -ForegroundColor Blue -BackgroundColor Black
-        Invoke-WebRequest -U -OutFi -ErrorAction Stop
-        Set-ItemProperty -Pa -Name IsReadOnly -Value $true -ErrorAction Stop
+        Invoke-WebRequest -Uri -OutFile -ErrorAction Stop
+        Set-ItemProperty -Path -Name IsReadOnly -Value $true -ErrorAction Stop
         Write-Host "Succeeded" -ForegroundColor Blue -BackgroundColor Black
     }
     catch {
-        Write-Host "Error: Failed to create the file a]" -ForegroundColor White -BackgroundColor DarkRed
+        Write-Host "Error: Failed to create the file `"Updater.ps1`"" -ForegroundColor White -BackgroundColor DarkRed
         Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red -BackgroundColor Black
     }
 
     try {# Install LICENSE
         Write-Host "Installing LICENSE" -ForegroundColor Blue -BackgroundColor Black
-        Invoke-WebRequest -U -OutFi -ErrorAction Stop
-        Set-ItemProperty -Pa -Name IsReadOnly -Value $true -ErrorAction Stop
+        Invoke-WebRequest -Uri -OutFile -ErrorAction Stop
+        Set-ItemProperty -Path -Name IsReadOnly -Value $true -ErrorAction Stop
         Write-Host "Succeeded" -ForegroundColor Blue -BackgroundColor Black
     }
     catch {
-        Write-Host "Error: Failed to create the file a]" -ForegroundColor White -BackgroundColor DarkRed
+        Write-Host "Error: Failed to create the file `"LICENSE`"" -ForegroundColor White -BackgroundColor DarkRed
         Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red -BackgroundColor Black
     }
 
@@ -76,7 +76,7 @@ function Default-Settings {# Create/overwrite the settings file such that is in 
 
 function Modify-Setting {# Modifies an entry ($Branch) in the settings file to have a new value ($Path)
     param (
-        $Branch
+        $Branch,
         $Path
     )
 
@@ -126,7 +126,7 @@ function Modify-Task {# Adds or removes tasks associated with this program withi
             # Before trying to create it, make sure we have a path to use
             [String]$installDirectory
             if (-not (Find-Default-Path)) {# If not installed at the default path
-                $installDirectory = Enter-Custom-Path -Branch $Branch -IsRequired# Ask the user for a custom path
+                $installDirectory = Enter-Custom-Path -Branch $Branch -IsRequired # Ask the user for a custom path
                 if ($installDirectory -eq '') { # If we get a blank string back, user chose to Cancel
                     Write-Host "`nAborting task creation" -ForegroundColor Yellow
                     return
@@ -413,7 +413,9 @@ function Full-Uninstall-Menu {# UI logic regarding the sub-menu for confirming a
 
         if ($choice -eq 'DELETE') {
             Full-Uninstall
-            return
+            Write-Host "`nUninstallation complete. Exiting..." -ForegroundColor Green
+            Start-Sleep -Seconds 3
+            Exit
         }
     }
 }
