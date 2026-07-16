@@ -346,8 +346,7 @@ function Tasks-Menu {# UI logic regarding the Background Updates sub-menu
         }
 
         # Pause at the end of the logic so user can bear witness to any outputs before cycling back to a clean menu
-        Write-Host "`nPress any key to continue..."
-        $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+        Start-Sleep -Seconds 2
     }
 }
 
