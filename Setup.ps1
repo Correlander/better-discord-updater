@@ -194,7 +194,7 @@ function Full-Uninstall {# Fully uninstalls all files and tasks associated with 
     }
     # Wipe the parent directory that contains all related program files
     Remove-Item -Path $script:directoryPath -Recurse -Force
-    Write-Host "All tasks have been removed from the Windows Task Scheduler, and all files have been deleted..." -ForegroundColor Blue
+    Write-Host "`nAll tasks have been removed from the Windows Task Scheduler, and all files have been deleted." -ForegroundColor Blue
 }
 
 # ======================================================================= #
@@ -424,13 +424,15 @@ function Full-Uninstall-Menu {# UI logic regarding the sub-menu for confirming a
         Write-Host "             FULL UNINSTALL             " -ForegroundColor Cyan
         Write-Host "========================================`n" -ForegroundColor Cyan
 
-        Write-Host "Proceeding will fully delete all files and tasks associated with this updater.`n"
+        Write-Host "Proceeding will fully delete all files and tasks associated with this updater." -ForegroundColor Yellow
+        Write-Host "Type `"DELETE`" to proceed with the full uninstall" -ForegroundColor White
+        Write-Host "Type anything else to cancel" -ForegroundColor DarkGray
         
-        $choice = Read-Host -Prompt "Type `"DELETE`" to continue with uninstallation, or anything else to cancel, then press enter."
+        $choice = Read-Host -Prompt "Press Enter to submit input"
 
         if ($choice -eq 'DELETE') {
             Full-Uninstall
-            Write-Host "`nUninstallation complete. Exiting..." -ForegroundColor Green
+            Write-Host "Uninstallation complete. Exiting..." -ForegroundColor Green
             Start-Sleep -Seconds 3
             Exit
         }
