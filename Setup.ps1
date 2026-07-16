@@ -277,7 +277,7 @@ function Tasks-Menu {# UI logic regarding the Background Updates sub-menu
             if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
                 $statuses[$branch] = '[INSTALLED]'
             } else {
-                $statuses[$branch] = '[   NIL   ]'
+                $statuses[$branch] = '           '
             }
         }
 
@@ -285,7 +285,7 @@ function Tasks-Menu {# UI logic regarding the Background Updates sub-menu
         Write-Host "[1] $($statuses['Stable']) Discord Stable" -ForegroundColor White
         Write-Host "[2] $($statuses['Canary']) Discord Canary" -ForegroundColor White
         Write-Host "[3] $($statuses['PTB']) Discord PTB" -ForegroundColor White
-        Write-Host "[4] Back" -ForegroundColor DarkGray
+        Write-Host "[4] Back`n" -ForegroundColor DarkGray
 
         # Get user's input
         $choice = Read-Host -Prompt "Type an option (1-4) and press enter"
@@ -331,20 +331,20 @@ function Enter-Custom-Path {# UI logic regarding entering a custom file path, re
     )
 
     Write-Host "`nEnter the path to your custom installation for Discord[$Branch]" -ForegroundColor Cyan
-    Write-Host "`nMake sure it is the ABSOLUTE PATH for the folder containing `"Update.exe`"" -ForegroundColor Cyan
-    Write-Host "`n(In File Explorer, if you navigate into the folder, you can right click the address bar and click `"Copy address as text`")" -ForegroundColor DarkGray
+    Write-Host "Make sure it is the ABSOLUTE PATH for the folder containing `"Update.exe`"" -ForegroundColor Cyan
+    Write-Host "In File Explorer, if you navigate into the folder, right click the address bar and click `"Copy address as text`"" -ForegroundColor DarkGray
 
     # Change last prompt based on whether this path is required, or if it's fine to be returned as Default
     if ($IsRequired) {
-        Write-Host "(A valid path is required. Type 'cancel' to abort setup)`n" -ForegroundColor Yellow
+        Write-Host "`n(A valid path is required. Type 'cancel' to abort setup)" -ForegroundColor Yellow
     } else {
-        Write-Host "(Leave blank and press Enter to revert to Default)`n" -ForegroundColor DarkGray
+        Write-Host "(Leave blank and press Enter to revert to Default)" -ForegroundColor DarkGray
     }
 
     while ($true) {
         
         # Grab input
-        $newPath = Read-Host -Prompt "Path: "
+        $newPath = Read-Host -Prompt "Path"
         # Trim the input of string signifiers, in case the user enters them thinking they are needed
         $newPath = $newPath.Trim('"').Trim("'")
 
