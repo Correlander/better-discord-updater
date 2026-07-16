@@ -438,7 +438,7 @@ function Full-Uninstall-Menu {# UI logic regarding the sub-menu for confirming a
 
         Write-Host "Proceeding will fully delete all files and tasks associated with this updater." -ForegroundColor Yellow
         Write-Host "Type `"DELETE`" to proceed with the full uninstall" -ForegroundColor White
-        Write-Host "Type anything else to cancel" -ForegroundColor DarkGray
+        Write-Host "Type anything else to cancel`n" -ForegroundColor DarkGray
         
         $choice = Read-Host -Prompt "Press Enter to submit input"
 
@@ -447,6 +447,8 @@ function Full-Uninstall-Menu {# UI logic regarding the sub-menu for confirming a
             Write-Host "Uninstallation complete. Exiting..." -ForegroundColor Green
             Start-Sleep -Seconds 3
             Exit
+        } else {
+            return
         }
     }
 }
