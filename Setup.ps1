@@ -1,13 +1,10 @@
 # ======================================================================= #
 # =========================== Initialization ============================ #
 
-# Fluff - this gets cleared pretty much immediately
-# Leaving it here and not fixing yet
-# If I make it a TUI I will probably incorporate it, otherwise will probably delete
+# Fluff
 Write-Host "BetterDiscord Updater Setup Script v2.0"
 Write-Host "Copyright (c) 2026 Correlander - MIT License"
 Write-Host "https://github.com/Correlander/better-discord-updater"
-Write-Host "`n"
 
 # Variables
 [String]$directoryPath = Join-Path -Path $env:LOCALAPPDATA -ChildPath "BetterDiscordUpdater"
