@@ -1,7 +1,9 @@
 # ======================================================================= #
 # =========================== Initialization ============================ #
 
-# Fluff
+# Fluff - this gets cleared pretty much immediately
+# Leaving it here and not fixing yet
+# If I make it a TUI I will probably incorporate it, otherwise will probably delete
 Write-Host "BetterDiscord Updater Setup Script v2.0"
 Write-Host "Copyright (c) 2026 Correlander - MIT License"
 Write-Host "https://github.com/Correlander/better-discord-updater"
@@ -17,7 +19,7 @@ Write-Host "`n"
 function Script-Bootstrapping {# Installs core script and associated license, forcefully overwrites existing versions to accommodate any updates, installs default settings file if no existing settings file
 
     # Define variables
-    [String]$updaterPath = Join-Path -Path $script:directoryPath -ChildPath "Updater.ps1"
+    [String]$updaterPath = Join-Path -Path $script:directoryPath -ChildPath "Updater.exe"
     [String]$licensePath = Join-Path -Path $script:directoryPath -ChildPath "LICENSE.txt"
     [String]$updaterUrl = 'https://raw.githubusercontent.com/Correlander/better-discord-updater/main/Updater.ps1'
     [String]$licenseUrl = 'https://raw.githubusercontent.com/Correlander/better-discord-updater/main/LICENSE'
@@ -45,13 +47,13 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
             Set-ItemProperty -Path $updaterPath -Name IsReadOnly -Value $false -ErrorAction Stop
         }
 
-        Write-Host "`nInstalling Updater.ps1" -ForegroundColor Blue
+        Write-Host "`nInstalling Updater.exe" -ForegroundColor Blue
         Invoke-WebRequest -Uri $updaterUrl -OutFile $updaterPath -ErrorAction Stop
         Set-ItemProperty -Path $updaterPath -Name IsReadOnly -Value $true -ErrorAction Stop
         Write-Host "Success" -ForegroundColor Green
     }
     catch {
-        Write-Host "Error: Failed to create the file `"Updater.ps1`" - Please copy this error and open an issue" -ForegroundColor Red
+        Write-Host "Error: Failed to create the file `"Updater.exe`" - Please copy this error and open an issue" -ForegroundColor Red
         Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
         Write-Host "`nPress any key to continue..."
         $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
@@ -149,30 +151,32 @@ function Find-Default-Path {# Attempts to find the default installation path for
     }
 }
 
-function Modify-Task {# Adds or removes tasks associated with this program within the Windows Task Scheduler
+function Modify-Registry {# Adds or removes tasks associated with this program within the Windows Task Scheduler
     param(# Parameters
         [String]$Type,
         [String]$Branch
     )
-
-    # Define variables
-    [String]$taskName = "BetterDiscordUpdater[$Branch]"
-
-    # Validate $Branch flag
-    switch ($Branch) {
+    switch ($Branch) {# Validate $Branch flag
         'Stable' { continue }
         'Canary' { continue }
         'PTB' { continue }
         default {
-            Write-Host "Error: Modify-Task was called with either an invalid or no `$Branch flag." -ForegroundColor Red
+            Write-Host "Error: Modify-Registry was called with either an invalid or no `$Branch flag." -ForegroundColor Red
             Exit
         }
     }
 
-    switch ($Type) {
-        'add' {# Add a task to Windows Task Scheduler that will run the updater script upon user login for the specified Discord branch
+    # Define variables
+    [String]$regKey = "BetterDiscordUpdater[$Branch]"
+    [String]$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    [String]$exePath = Join-Path $script:directoryPath -ChildPath "Updater.exe"
 
-            # Before trying to create it, make sure we have a path to use
+    # $command is the entry associated with the entry in the registry, and $regKey is just the custom name for the entry, and the entry is located in the database at $regPath
+    # For whatever reasons, the registry is treated as a hard drive (HKCU) probably would make sense if I looked into it but I wish they had cmdlets for working with it rather than having to do this, oh well
+    switch ($Type) {
+        'add' {# Add a registry entry to run the Updater.exe on user login
+
+            # Before trying to create it, make sure we have a valid discord installation to use
             [String]$installDirectory
             if (-not (Find-Default-Path -Branch $Branch)) {# If not installed at the default path
                 $installDirectory = Enter-Custom-Path -Branch $Branch -IsRequired # Ask the user for a custom path
@@ -182,44 +186,37 @@ function Modify-Task {# Adds or removes tasks associated with this program withi
                 }
             }
 
-            try {
-                # Define task creation parameters
-                $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$script:directoryPath\Updater.ps1`" -Branch `"$Branch`""
-                $trigger = New-ScheduledTaskTrigger -AtLogOn
-                $settings = New-ScheduledTaskSettingsSet -Hidden -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-                $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive
-
-                # Create the task
-                Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force -ErrorAction Stop | Out-Null
-
-                Write-Host "Scheduled Task created successfully!" -ForegroundColor Green
+            try { # Try to create the registry entry
+                [String]$command = "`"$exePath`" -Branch `"$Branch`""
+                
+                Set-ItemProperty -Path $regPath -Name $regKey -Value $command -ErrorAction Stop
+                Write-Host "Added startup Registry entry associated with Discord[$Branch]" -ForegroundColor Green
             }
-            catch {# Used -ErrorAction Stop, so any error with registering the scheduled task will be considered termination worthy.
-                Write-Host "Error: Failed to add the task to Task Scheduler - Please copy this error and open an issue" -ForegroundColor Red
+            catch {
+                Write-Host "Error: Failed to add entry to Registry - Please copy this error and open an issue" -ForegroundColor Red
                 Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
                 Write-Host "`nPress any key to continue..."
                 $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
-            }
         }
-        'remove' {# Remove the task associated with the provided branch, if it exists
-            $existingTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
-            if ($existingTask) {
-                try {
-                    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction Stop
-                    Write-Host "Deleted task associated with Discord[$Branch]" -ForegroundColor Blue
+        'remove' {
+            # Check if the registry key exists before trying to delete it
+            if (Get-ItemProperty -Path $regPath -Name $regKey -ErrorAction SilentlyContinue) {
+                try {# Try to delete the registry entry
+                    Remove-ItemProperty -Path $regPath -Name $regKey -ErrorAction Stop
+                    Write-Host "Deleted startup Registry entry associated with Discord[$Branch]" -ForegroundColor Yellow
                 }
                 catch {
-                    Write-Host "Error: Failed to remove the task from Task Scheduler - Please copy this error and open an issue" -ForegroundColor Red
+                    Write-Host "Error: Failed to remove entry from Registry - Please copy this error and open an issue" -ForegroundColor Red
                     Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
                     Write-Host "`nPress any key to continue..."
                     $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
                 }
             } else {
-                Write-Host "Warning: No background task found for [$Branch]" -ForegroundColor Yellow
+                Write-Host "No Registry entry found for Discord[$Branch]" -ForegroundColor Yellow
             }
         }
         default {# If no proper type flag, will exit and call it out
-            Write-Host "Error: Modify-Task was called with either an invalid or no `$Type flag." -ForegroundColor Red
+            Write-Host "Error: Modify-Registry was called with either an invalid or no `$Type flag." -ForegroundColor Red
             Exit
         }
     }
@@ -230,7 +227,7 @@ function Full-Uninstall {# Fully uninstalls all files and tasks associated with 
     # Remove any possibly existing tasks
     [String[]]$branches = "Stable","Canary","PTB"
     foreach ($branch in $branches) { 
-        Modify-Task -Type 'remove' -Branch $branch
+        Modify-Registry -Type 'remove' -Branch $branch
     }
     # Wipe the parent directory that contains all related program files
     Remove-Item -Path $script:directoryPath -Recurse -Force
@@ -266,7 +263,7 @@ function Main-Menu {# UI logic regarding the main menu
 
         switch ($choice) {
             '1' {
-                Tasks-Menu
+                Update-Management-Menu
             }
             '2' {
                 Settings-Menu
@@ -286,7 +283,7 @@ function Main-Menu {# UI logic regarding the main menu
     }
 }
 
-function Tasks-Menu {# UI logic regarding the Background Updates sub-menu
+function Update-Management-Menu {# UI logic regarding the Background Updates sub-menu
 
     while ($true) {# Hold user in this sub-menu until the function returns
 
@@ -298,11 +295,11 @@ function Tasks-Menu {# UI logic regarding the Background Updates sub-menu
 
         # Populate dictionary with the statuses of all branches associated tasks
         [String[]]$branches = @('Stable', 'Canary', 'PTB')
-        $statuses = @{} # I prefer variables more strictly typed
+        $statuses = @{}
 
         foreach ($branch in $branches) {
-            $taskName = "BetterDiscordUpdater[$branch]"
-            if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
+            $regKey = "BetterDiscordUpdater[$branch]"
+            if (Get-ScheduledTask -TaskName $regKey -ErrorAction SilentlyContinue) {
                 $statuses[$branch] = '[INSTALLED]'
             } else {
                 $statuses[$branch] = '           '
@@ -337,11 +334,11 @@ function Tasks-Menu {# UI logic regarding the Background Updates sub-menu
             if ($statuses[$selectedBranch] -match "INSTALLED") {
                 Clear-Host
                 Write-Host "Removing updater task for Discord $selectedBranch..." -ForegroundColor Yellow
-                Modify-Task -Type 'remove' -Branch $selectedBranch
+                Modify-Registry -Type 'remove' -Branch $selectedBranch
             } else {
                 Clear-Host
                 Write-Host "Installing updater task for Discord $selectedBranch..." -ForegroundColor Green
-                Modify-Task -Type 'add' -Branch $selectedBranch
+                Modify-Registry -Type 'add' -Branch $selectedBranch
             }
         }
 
