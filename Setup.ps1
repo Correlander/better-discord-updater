@@ -299,7 +299,8 @@ function Update-Management-Menu {# UI logic regarding the Background Updates sub
 
         foreach ($branch in $branches) {
             $regKey = "BetterDiscordUpdater[$branch]"
-            if (Get-ScheduledTask -TaskName $regKey -ErrorAction SilentlyContinue) {
+            $regPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+            if (Get-ItemProperty -Path $regPath -Name $regKey -ErrorAction SilentlyContinue) {
                 $statuses[$branch] = '[INSTALLED]'
             } else {
                 $statuses[$branch] = '           '
