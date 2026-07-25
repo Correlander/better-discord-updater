@@ -8,12 +8,12 @@ Write-Host "https://github.com/Correlander/better-discord-updater"
 
 # Variables
 [String]$directoryPath = Join-Path -Path $env:LOCALAPPDATA -ChildPath "BetterDiscordUpdater"
-[String]$configPath = Join-Path -Path $directoryPath -ChildPath "config.json"
+[String]$configPath = Join-Path -Path $directoryPath -ChildPath "config.cfg"
 
 # ======================================================================= #
 # ========================= Internal Functions ========================== #
 
-function Script-Bootstrapping {# Installs core script and associated license, forcefully overwrites existing versions to accommodate any updates, installs default settings file if no existing settings file
+function Run-Bootstrapping {# Installs core script and associated license, forcefully overwrites existing versions to accommodate any updates, installs default settings file if no existing settings file
 
     # Define variables
     [String]$updaterPath = Join-Path -Path $script:directoryPath -ChildPath "Updater.exe"
@@ -37,7 +37,7 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
         }
     }
 
-    try {# Install Updater.ps1
+    try {# Install Updater.exe
 
         # If it already exists, remove read only flag so we can overwrite
         if (Test-Path -Path $updaterPath) {
@@ -78,44 +78,120 @@ function Script-Bootstrapping {# Installs core script and associated license, fo
     }
 
     if (-not (Test-Path -Path $script:configPath)) {# If no existing settings file
-        Default-Settings # Create it
+        Modify-Settings -SetDefault # Create it
     }
 }
 
-function Default-Settings {# Create/overwrite the settings file such that is in the default state
+function Read-Config {# Load settings and return dictionary
+    [OutputType([Hashtable])]
 
-    $defaultSettings = @{# Create a hashtable of the default values
-        'Stable' = ""
-        'Canary' = ""
-        'PTB' = ""
+    try {
+        $rawContent = Get-Content -Path $script:configPath -Raw -ErrorAction Stop
+        $config = $rawContent | ConvertFrom-StringData -ErrorAction Stop
+        return $config
     }
-
-    # Then convert it to JSON and write it to disk
-    $defaultSettings | ConvertTo-Json | Out-File -FilePath $script:configPath -Force
+    catch {
+        Write-Host "Error: Failed to load existing settings from disk - Please copy this error and open an issue" -ForegroundColor Red
+        Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "`nPress any key to continue..."
+        $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+        Exit
+    }
 }
 
-function Modify-Setting {# Modifies an entry ($Branch) in the settings file to have a new value ($Path)
+function Save-Config {# Saves given settings to file
     param (
-        $Branch,
-        $Path
+        [Hashtable]$Settings
     )
 
-    $config = Get-Content -Path $script:configPath | ConvertFrom-Json
-
-    if ($Path -eq "") {
-        $config.$Branch = ""
-        Write-Host "`nSet path for $Branch to Default." -ForegroundColor Green
-    } else {
-        $config.$Branch = $Path
-        Write-Host "`nSet path for $Branch to `"$Path`"." -ForegroundColor Green
+    try {
+        $formattedLines = $Settings.GetEnumerator() | ForEach-Object { "$($_.Name)=$($_.Value)" } -ErrorAction Stop
+        Set-Content -Path $script:configPath -Value $formattedLines -Force -ErrorAction Stop
     }
-
-    # Write the updated object back to the JSON file
-    $config | ConvertTo-Json | Out-File -FilePath $script:configPath -Force
+    catch {
+        Write-Host "Error: Failed to write configuration file to disk - Please copy this error and open an issue" -ForegroundColor Red
+        Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "`nPress any key to continue..."
+        $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+        Exit
+    }
 }
 
-function Find-Default-Path {# Attempts to find the default installation path for a Branch, returns true if found and false if not
-    [OutputType([bool])]
+function Modify-Settings {# Modifies an entry ($Branch) in the settings file to have a new value ($Path), or resets settings to default
+    param (
+        [String]$Branch,
+        [String]$Path,
+        [switch]$SetDefault
+    )
+
+    if ($SetDefault) {# If set default is declared
+        # Create a hashtable of the default values
+        [Hashtable]$settings = @{ 'Stable' = ''; 'Canary' = ''; 'PTB' = '' }
+        # Then write it to disk and return
+        Save-Config -Settings $settings
+        return
+    }
+
+    # Get settings from config
+    [Hashtable]$settings = Read-Config
+
+    # Update the target branch value
+    $settings[$Branch] = $Path
+    if ($Path -eq "") {
+        Write-Host "`nCleared directory path for Discord-$Branch"
+    } else {
+        Write-Host "`nSet path for Discord-$Branch to `"$Path`""
+    }
+
+    # Save modified settings to config
+    Save-Config -Settings $settings
+}
+
+function Add-RegistryEntry {# Adds entry to the Registry so Updater.exe runs on startup
+
+    # Define variables
+    [String]$regKey = "BetterDiscordUpdater"
+    [String]$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+    [String]$exePath = Join-Path $script:directoryPath -ChildPath "Updater.exe"
+    [String]$command = "`"$exePath`""
+    
+    try { # Try to create the registry entry      
+        Set-ItemProperty -Path $regPath -Name $regKey -Value $command -ErrorAction Stop
+        Write-Host "Wrote [Key: `"$regKey`" Value: `"$exePath`"] entry to the registry at `"Software\Microsoft\Windows\CurrentVersion\Run`"" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Error: Failed to write entry to Registry - Please copy this error and open an issue" -ForegroundColor Red
+        Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "`nPress any key to continue..."
+        $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+    }
+}
+
+function Remove-RegistryEntry {# Removes entry from the Registry so Updater.exe won't run on startup
+
+    # Define variables
+    [String]$regKey = "BetterDiscordUpdater"
+    [String]$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+
+    # Check if the registry key exists before trying to delete it
+    if (Get-ItemProperty -Path $regPath -Name $regKey -ErrorAction SilentlyContinue) {
+        try {# Try to delete the registry entry
+            Remove-ItemProperty -Path $regPath -Name $regKey -ErrorAction Stop
+            Write-Host "Deleted entry for `"BetterDiscordUpdater`" from the registry" -ForegroundColor Yellow
+        }
+        catch {
+            Write-Host "Error: Failed to remove entry from Registry - Please copy this error and open an issue" -ForegroundColor Red
+            Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "`nPress any key to continue..."
+            $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+        }
+    } else {
+        Write-Host "Warning: Attempted to delete a Registry entry, but no entry was found" -ForegroundColor Yellow
+    }
+}
+
+function Get-DefaultPath {# Attempts to find the default installation path for a Branch, returns the path if found and "" if not
+    [OutputType([String])]
     param (
         $Branch
     )
@@ -129,10 +205,10 @@ function Find-Default-Path {# Attempts to find the default installation path for
             $discordDirectory = "DiscordCanary"
         }
         'PTB' {
-            $directoryPath = "DiscordPTB"
+            $discordDirectory = "DiscordPTB"
         }
         default {
-            Write-Host "Error: Find-Default-Path was called with either an invalid or no `$Branch flag." -ForegroundColor Red
+            Write-Host "Error: Find-Default-Path was called with an invalid `$Branch flag -> `"$Branch`"" -ForegroundColor Red
             Exit
         }
     }
@@ -140,107 +216,28 @@ function Find-Default-Path {# Attempts to find the default installation path for
     $discordPath = Join-Path -Path $env:LOCALAPPDATA -ChildPath $discordDirectory
     if (Test-Path -Path (Join-Path -Path $discordPath -ChildPath "Update.exe"))
     {
-        Write-Host "Installation at Default path `"$discordPath`" automatically found." -ForegroundColor Green
-        return $true
+        Write-Host "Installation at Default path `"$discordPath`" automatically found" -ForegroundColor Green
+        return $discordPath
     } else {
-        Write-Host "Installation at Default path `"$discordPath`" not found." -ForegroundColor Yellow
-        return $false
-    }
-}
-
-function Modify-Registry {# Adds or removes tasks associated with this program within the Windows Task Scheduler
-    param(# Parameters
-        [String]$Type,
-        [String]$Branch
-    )
-    switch ($Branch) {# Validate $Branch flag
-        'Stable' { continue }
-        'Canary' { continue }
-        'PTB' { continue }
-        default {
-            Write-Host "Error: Modify-Registry was called with either an invalid or no `$Branch flag." -ForegroundColor Red
-            Exit
-        }
-    }
-
-    # Define variables
-    [String]$regKey = "BetterDiscordUpdater[$Branch]"
-    [String]$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-    [String]$exePath = Join-Path $script:directoryPath -ChildPath "Updater.exe"
-
-    # $command is the entry associated with the entry in the registry, and $regKey is just the custom name for the entry, and the entry is located in the database at $regPath
-    # For whatever reasons, the registry is treated as a hard drive (HKCU) probably would make sense if I looked into it but I wish they had cmdlets for working with it rather than having to do this, oh well
-    switch ($Type) {
-        'add' {# Add a registry entry to run the Updater.exe on user login
-
-            # Before trying to create it, make sure we have a valid discord installation to use
-            [String]$installDirectory
-            if (-not (Find-Default-Path -Branch $Branch)) {# If not installed at the default path
-                $installDirectory = Enter-Custom-Path -Branch $Branch -IsRequired # Ask the user for a custom path
-                if ($installDirectory -eq '') { # If we get a blank string back, user chose to Cancel
-                    Write-Host "`nAborting task creation" -ForegroundColor Yellow
-                    return
-                }
-            }
-
-            try { # Try to create the registry entry
-                [String]$command = "`"$exePath`" -Branch `"$Branch`""
-                
-                Set-ItemProperty -Path $regPath -Name $regKey -Value $command -ErrorAction Stop
-                Write-Host "Added startup Registry entry associated with Discord[$Branch]" -ForegroundColor Green
-            }
-            catch {
-                Write-Host "Error: Failed to add entry to Registry - Please copy this error and open an issue" -ForegroundColor Red
-                Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
-                Write-Host "`nPress any key to continue..."
-                $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
-        }
-        'remove' {
-            # Check if the registry key exists before trying to delete it
-            if (Get-ItemProperty -Path $regPath -Name $regKey -ErrorAction SilentlyContinue) {
-                try {# Try to delete the registry entry
-                    Remove-ItemProperty -Path $regPath -Name $regKey -ErrorAction Stop
-                    Write-Host "Deleted startup Registry entry associated with Discord[$Branch]" -ForegroundColor Yellow
-                }
-                catch {
-                    Write-Host "Error: Failed to remove entry from Registry - Please copy this error and open an issue" -ForegroundColor Red
-                    Write-Host "Details: $($_.Exception.Message)" -ForegroundColor Red
-                    Write-Host "`nPress any key to continue..."
-                    $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
-                }
-            } else {
-                Write-Host "No Registry entry found for Discord[$Branch]" -ForegroundColor Yellow
-            }
-        }
-        default {# If no proper type flag, will exit and call it out
-            Write-Host "Error: Modify-Registry was called with either an invalid or no `$Type flag." -ForegroundColor Red
-            Exit
-        }
+        Write-Host "Installation at Default path `"$discordPath`" not found" -ForegroundColor Yellow
+        return ""
     }
 }
 
 function Full-Uninstall {# Fully uninstalls all files and tasks associated with the BD Automatic Updater
 
-    # Remove any possibly existing tasks
-    [String[]]$branches = "Stable","Canary","PTB"
-    foreach ($branch in $branches) { 
-        Modify-Registry -Type 'remove' -Branch $branch
-    }
+    # Remove entry from registry
+    Remove-RegistryEntry
+
     # Wipe the parent directory that contains all related program files
     Remove-Item -Path $script:directoryPath -Recurse -Force
-    Write-Host "`nAll tasks have been removed from the Windows Task Scheduler, and all files have been deleted." -ForegroundColor Blue
+    Write-Host "All files have been deleted" -ForegroundColor Green
 }
 
 # ======================================================================= #
 # ============================ UI Functions ============================= #
 
 function Main-Menu {# UI logic regarding the main menu
-
-    Script-Bootstrapping # Install core files
-
-    # Let user read the outputs from those successful operations (unsuccessful ones would exit)
-    Write-Host "`nBootstrapping complete, proceeding to menu..."
-    Start-Sleep -Seconds 3
 
     while ($true) {
 
@@ -250,30 +247,26 @@ function Main-Menu {# UI logic regarding the main menu
         Write-Host "========================================`n" -ForegroundColor Cyan
 
         # Give prompts
-        Write-Host "[1] Manage Background Updates"
-        Write-Host "[2] Settings Manager"
-        Write-Host "[3] Full Uninstall"
-        Write-Host "[4] Exit"
+        Write-Host "[1] Configure Auto-Updater"
+        Write-Host "[2] Full Uninstall"
+        Write-Host "[3] Exit"
 
         # Get user's input
-        $choice = Read-Host -Prompt "Type an option (1-4) and press enter"
+        $choice = Read-Host -Prompt "Type an option (1-3) and press enter"
 
         switch ($choice) {
             '1' {
                 Update-Management-Menu
             }
             '2' {
-                Settings-Menu
-            }
-            '3' {
                 Full-Uninstall-Menu
             }
-            '4' {
+            '3' {
                 Exit
             }
             default {
                 Clear-Host
-                Write-Host "`nInvalid Selection. Please only enter a number between 1 and 4." -ForegroundColor Red
+                Write-Host "`nInvalid Selection, please only enter a number between 1 and 3" -ForegroundColor Red
                 Start-Sleep -Seconds 3 # Pauses for 3 seconds so they can see their mistake in bright red before it refreshes and allows them to try again
             }
         }
@@ -286,35 +279,39 @@ function Update-Management-Menu {# UI logic regarding the Background Updates sub
 
         Clear-Host
         Write-Host "========================================" -ForegroundColor Cyan
-        Write-Host "       Manage Background Updates        " -ForegroundColor Cyan
+        Write-Host "         Configure Auto-Updater         " -ForegroundColor Cyan
         Write-Host "========================================`n" -ForegroundColor Cyan
         Write-Host "Choose a number to swap whether the branch is automatically updated on startup" -ForegroundColor Magenta
+        Write-Host "Note: If you need to change an installation path that has been set, turn the Discord branch you wish to change off and on again`n`n" -ForegroundColor DarkGray
 
-        # Populate dictionary with the statuses of all branches associated tasks
+        # Get settings
+        [Hashtable]$settings = Read-Config
+
+        # Give (dynamic) prompts
         [String[]]$branches = @('Stable', 'Canary', 'PTB')
-        $statuses = @{}
-
+        $menuNumber = 1
         foreach ($branch in $branches) {
-            $regKey = "BetterDiscordUpdater[$branch]"
-            $regPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-            if (Get-ItemProperty -Path $regPath -Name $regKey -ErrorAction SilentlyContinue) {
-                $statuses[$branch] = '[INSTALLED]'
-            } else {
-                $statuses[$branch] = '           '
-            }
-        }
+            [String]$path = $settings[$branch]
+            [String]$paddedName = $branch.padRight(6)
 
-        # Give prompts
-        Write-Host "[1] $($statuses['Stable']) Discord Stable" -ForegroundColor White
-        Write-Host "[2] $($statuses['Canary']) Discord Canary" -ForegroundColor White
-        Write-Host "[3] $($statuses['PTB']) Discord PTB" -ForegroundColor White
-        Write-Host "[4] Back`n" -ForegroundColor DarkGray
+            Write-Host "[$menuNumber] Discord-$paddedName : [ " -NoNewLine
+
+            if ([String]::IsNullOrWhiteSpace($path)) {
+                Write-Host "DISABLED" -ForegroundColor DarkGray -NoNewLine
+                Write-Host " ]"
+            } else {
+                Write-Host "ENABLED " -ForegroundColor Green -NoNewLine
+                Write-Host " ] -> $path"
+            }
+            $menuNumber++
+        }
+        Write-Host "[4] Back"
 
         # Get user's input
         $choice = Read-Host -Prompt "Type an option (1-4) and press enter"
 
         # Map the choice to the branch
-        $selectedBranch = $null 
+        [String]$selectedBranch
         switch ($choice) {
             '1' { $selectedBranch = 'Stable' }
             '2' { $selectedBranch = 'Canary' }
@@ -322,46 +319,71 @@ function Update-Management-Menu {# UI logic regarding the Background Updates sub
             '4' { return }
             default {
                 Clear-Host
-                Write-Host "`nInvalid Selection. Please only enter a number between 1 and 4." -ForegroundColor Red
+                Write-Host "`nInvalid Selection, please only enter a number between 1 and 4" -ForegroundColor Red
                 Start-Sleep -Seconds 3 # Pauses for 3 seconds so they can see their mistake in bright red before it refreshes and allows them to try again
+                continue
             }
         }
 
-        # Toggle Logic
-        if ($selectedBranch) {
-            if ($statuses[$selectedBranch] -match "INSTALLED") {
-                Clear-Host
-                Write-Host "Removing updater task for Discord $selectedBranch..." -ForegroundColor Yellow
-                Modify-Registry -Type 'remove' -Branch $selectedBranch
-            } else {
-                Clear-Host
-                Write-Host "Installing updater task for Discord $selectedBranch..." -ForegroundColor Green
-                Modify-Registry -Type 'add' -Branch $selectedBranch
+        # Toggling Logic
+        if ([String]::IsNullOrWhiteSpace($settings[$selectedBranch])) {
+            Write-Host "Adding automatic updates for Discord-$selectedBranch" -ForegroundColor Green
+
+            # Get path
+            [String]$path = Get-DefaultPath -Branch $selectedBranch
+
+            if ($path -ne "") {# If default path found
+                Write-Host "Default path found at `"$path`", would you like to use it?"
+                $choice = Read-Host -Prompt "Would you like to use it? type `"yes`" if so"
+                if ($choice -ne 'yes') {
+                    $path = "" # Clear it because they don't want to install wherever the default path was found, supports edge case of them having a second install that's not the default
+                }
             }
+
+            if ([String]::IsNullOrWhiteSpace($path)) {# If path still hasn't been decided after looking for default
+                Write-Host "`nEnter the path to your installation for Discord-$selectedBranch"
+                $path = Enter-Custom-Path
+            }
+
+            if ([String]::IsNullOrWhiteSpace($path)) {# If path is still an empty string, the user chose to cancel the setup
+                Write-Host "Aborting installation of Auto-Updater for Discord-$selectedBranch" -ForegroundColor Yellow
+                Start-Sleep -Seconds 2
+                Continue # Skip rest of loop if aborting
+            }
+
+            # Store the chosen path and add registry entry
+            Modify-Settings -Branch $selectedBranch -Path $path
+            Add-RegistryEntry
+        } else {
+            Write-Host "Removing automatic updates for Discord-$selectedBranch" -ForegroundColor Yellow
+            Modify-Settings -Branch $selectedBranch -Path ""
+            
+            # Refresh settings variable
+            [Hashtable]$settings = Read-Config
+
+            # If no branches are enabled, remove the Registry entry so Updater.exe isn't pointlessly running on startup
+            [bool]$anyActive = $false
+            foreach ($branch in $branches) {
+                if (-not ([String]::IsNullOrWhiteSpace($settings[$branch]))) {
+                    $anyActive = $true
+                    break # exit early if set true
+                }
+            }
+            # Remove registry entry if no branches are active
+            if (-not $anyActive) { Remove-RegistryEntry }
         }
 
         # Pause at the end of the logic so user can bear witness to any outputs before cycling back to a clean menu
-        Start-Sleep -Seconds 2
+        Start-Sleep -Seconds 3
     }
 }
 
-function Enter-Custom-Path {# UI logic regarding entering a custom file path, returns the path user entered
+function Enter-Custom-Path {# UI logic regarding entering a custom file path, returns the path user entered or "" if cancelled
     [OutputType([String])]
-    param (
-        [String]$Branch,
-        [switch]$IsRequired
-    )
 
-    Write-Host "`nEnter the path to your custom installation for Discord[$Branch]" -ForegroundColor Cyan
-    Write-Host "Make sure it is the ABSOLUTE PATH for the folder containing `"Update.exe`"" -ForegroundColor Cyan
-    Write-Host "In File Explorer, if you navigate into the folder, right click the address bar and click `"Copy address as text`"" -ForegroundColor DarkGray
-
-    # Change last prompt based on whether this path is required, or if it's fine to be returned as Default
-    if ($IsRequired) {
-        Write-Host "`n(A valid path is required. Type 'cancel' to abort setup)" -ForegroundColor Yellow
-    } else {
-        Write-Host "(Leave blank and press Enter to revert to Default)" -ForegroundColor DarkGray
-    }
+    Write-Host "Make sure provided path is the ABSOLUTE PATH for the folder containing `"Update.exe`""
+    Write-Host "In File Explorer, navigate into the folder, right click the address bar, and click `"Copy address as text`"" -ForegroundColor DarkGray
+    Write-Host "`n(A valid path is required. You can type 'cancel' to abort)" -ForegroundColor Yellow
 
     while ($true) {
         
@@ -371,81 +393,22 @@ function Enter-Custom-Path {# UI logic regarding entering a custom file path, re
         $newPath = $newPath.Trim('"').Trim("'")
 
         # Handle the cancel keyword
-        if (($IsRequired) -and ($newPath.ToLower() -eq 'cancel')) {
-            return "" # If task setup receives this, should cancel the setup
+        if ($newPath.ToLower() -eq 'cancel') {
+            return ""
         }
 
         # Handle blank inputs
-        if ($newPath -eq "") {
-            if ($IsRequired) {
-                Write-Host "`nInvalid Path: A valid path is required. Type 'cancel' to abort, or enter a valid path" -ForegroundColor Yellow
-            } else {
-                return "" # Settings menu behavior, just returns "" and will set the entry to that, which is default value
-            }
+        if ([String]::IsNullOrWhiteSpace($newPath)) { # While an edge case, I only check for these to avoid the possibility of an Update.exe being in whatever the working directory is, and a possible false positive for passing the check
+            Write-Host "`nInvalid Path: A valid path is required, type 'cancel' to abort, or enter a valid path" -ForegroundColor Yellow
+            Continue # So there aren't two error messages
         }
 
         # Validation Step, if neither special case met
         if (Test-Path (Join-Path -Path $newPath -ChildPath "Update.exe")) {
             return $newPath
         } else {
-            Write-Host "`nInvalid Path: That directory does not exist. Please verify and try again." -ForegroundColor Yellow
+            Write-Host "`nInvalid Path: Discord does not exist within that directory, please verify and try again" -ForegroundColor Yellow
         }
-    }
-}
-
-function Settings-Menu {# UI logic regarding the settings sub-menu
-
-    while ($true) {# Hold user in this sub-menu until the function returns
-        
-        Clear-Host
-        Write-Host "========================================" -ForegroundColor Cyan
-        Write-Host "            Settings Manager            " -ForegroundColor Cyan
-        Write-Host "========================================`n" -ForegroundColor Cyan
-        Write-Host "Select a branch to override its installation path.`n" -ForegroundColor Magenta
-
-        # Read the current settings from the JSON file
-        $config = Get-Content -Path $script:configPath | ConvertFrom-Json
-
-        # Format the display strings
-        [String]$displayStable = if ($config.Stable -eq "") { "Default (Auto-Detect)" } else { $config.Stable }
-        [String]$displayCanary = if ($config.Canary -eq "") { "Default (Auto-Detect)" } else { $config.Canary }
-        [String]$displayPTB = if ($config.PTB -eq "") { "Default (Auto-Detect)" } else { $config.PTB }
-    
-
-        Write-Host "[1] Stable Path: $displayStable" -ForegroundColor White
-        Write-Host "[2] Canary Path: $displayCanary" -ForegroundColor White
-        Write-Host "[3] PTB Path:    $displayPTB" -ForegroundColor White
-        Write-Host "[4] Clear all custom paths" -ForegroundColor Yellow
-        Write-Host "[5] Back" -ForegroundColor DarkGray
-
-        $choice = Read-Host -Prompt "`nType an option (1-5) and press enter"
-
-        $selectedBranch = $null
-        switch ($choice) {
-            '1' { $selectedBranch = 'Stable' }
-            '2' { $selectedBranch = 'Canary' }
-            '3' { $selectedBranch = 'PTB' }
-            '4' {# Reset all to blank
-                Default-Settings
-                Write-Host "`nAll custom paths have been cleared." -ForegroundColor Green
-                Start-Sleep -Seconds 2
-                continue # Skips the rest of the loop
-            }
-            '5' { return }
-            default {
-                Clear-Host
-                Write-Host "`nInvalid Selection. Please only enter a number between 1 and 5." -ForegroundColor Red
-                Start-Sleep -Seconds 3
-                continue # Skips the rest of the loop
-            }
-        }
-
-        # Get the path they want to set the selected branch to
-        $customPath = Enter-Custom-Path -Branch $selectedBranch
-        Modify-Setting -Branch $selectedBranch -Path $customPath
-        
-        Write-Host "`nPress any key to continue..."
-        $null = $host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
     }
 }
 
@@ -474,5 +437,49 @@ function Full-Uninstall-Menu {# UI logic regarding the sub-menu for confirming a
     }
 }
 
-# Begin UI logic by running the Main Menu
+function Run-FirstInstallPrompts {# Simplistic install menu you're automatically put into on first run, will simplify the experience and make it as accessible as possible for edge cases in the people's understanding department
+
+    [String]$path
+
+    # FIND PATH SECTION
+    # path found for discord stable, do you want to use it? if yes proceed using this found path
+    # path found for discord canary, do you want to use it? if yes proceed using this found path
+    # path found for discord ptb, do you want to use it? if yes proceed using this found path
+    # no paths found/said yes to, enter path to discord installation or type EXIT to exit
+
+    # No paths found, ask for custom installation path or for them to exit
+    #Write-Host "`nEnter the path to your installation of Discord you'd like to automatically update"
+    #$path = Enter-Custom-Path
+    #if ($path -eq "") {
+    #    "Abandoning installation" -ForegroundColor Yellow
+    #}
+
+
+
+
+
+# Run default path for all branches
+# If found ask if they want to use it, if not say it's not found
+# If it wasn't found or they said they don't want to use it
+}
+
+# ======================================================================= #
+# ============================ Script Logic ============================= #
+
+# Check if this is their first time running the installer
+[bool]$firstInstall = $false # NOT ACTUALLY CHECKED YET, DUMMY VALUE
+
+# Install core files - reinstalls regardless of first install, so that it will update itself on Setup run
+Run-Bootstrapping
+
+# Let user read the outputs from those bootstrapping operations so screen isn't just flashing
+Write-Host "`nBootstrapping complete, proceeding to menu..."
+Start-Sleep -Seconds 3
+
+# If it's the first time installing this, run the first install menu
+#if ($firstInstall) {
+#    Run-FirstInstallPrompts
+#}
+
+# Go to main menu for any further management (post initial install, or running the setup again to further manage things)
 Main-Menu
